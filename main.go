@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	TICK_RATE   = 60
-	PLAYER_SIZE = 20
-	BULLET_SIZE = 6
+	TICK_RATE    = 60
+	PLAYER_SIZE  = 20
+	BULLET_SIZE  = 6
 	BULLET_SPEED = 8
 )
 
@@ -84,32 +84,26 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		mu.Lock()
 		p := players[id]
+
+		// Move player once
 		p.X += msg["dx"] * 5
-p.Y += msg["dy"] * 5
+		p.Y += msg["dy"] * 5
 
-// Clamp to screen
-p.X += msg["dx"] * 5
-p.Y += msg["dy"] * 5
+		// Clamp to large float64 bounds (full screen)
+		maxX := 10000.0
+		maxY := 10000.0
+		if p.X < 0 {
+			p.X = 0
+		} else if p.X > maxX-PLAYER_SIZE {
+			p.X = maxX - PLAYER_SIZE
+		}
+		if p.Y < 0 {
+			p.Y = 0
+		} else if p.Y > maxY-PLAYER_SIZE {
+			p.Y = maxY - PLAYER_SIZE
+		}
 
-// Clamp to screen
-maxX := 10000 // or get actual client width
-maxY := 10000 // or get actual client height
-
-if p.X < 0 {
-    p.X = 0
-} else if p.X > maxX-PLAYER_SIZE {
-    p.X = maxX - PLAYER_SIZE
-}
-if p.Y < 0 {
-    p.Y = 0
-} else if p.Y > maxY-PLAYER_SIZE {
-    p.Y = maxY - PLAYER_SIZE
-}
-
-
-
-
-
+		// Shoot bullet
 		if msg["shoot"] == 1 {
 			angle := msg["a"]
 			bullets = append(bullets, Bullet{
@@ -135,48 +129,45 @@ func gameLoop() {
 		mu.Lock()
 
 		// Move bullets
-		// Move bullets and check collisions
-nb := bullets[:0]
-hit := false
-for _, b := range bullets {
-    b.X += b.DX
-    b.Y += b.DY
+		nb := bullets[:0]
+		hit := false
+		for _, b := range bullets {
+			b.X += b.DX
+			b.Y += b.DY
 
-    // Check if bullet hits any player except the owner
-    for _, p := range players {
-        if p.ID != b.O {
-            dx := p.X - b.X
-            dy := p.Y - b.Y
-            dist := math.Sqrt(dx*dx + dy*dy)
-            if dist < (PLAYER_SIZE+BULLET_SIZE)/2 {
-                hit = true
-                break
-            }
-        }
-    }
+			// Check collisions with players (except owner)
+			for _, p := range players {
+				if p.ID != b.O {
+					dx := p.X - b.X
+					dy := p.Y - b.Y
+					dist := math.Sqrt(dx*dx + dy*dy)
+					if dist < (PLAYER_SIZE+BULLET_SIZE)/2 {
+						hit = true
+						break
+					}
+				}
+			}
 
-    // Keep bullet if in bounds
-    if b.X >= 0 && b.Y >= 0 && b.X <= 800 && b.Y <= 600 {
-        nb = append(nb, b)
-    }
-}
-bullets = nb
+			// Keep bullets in bounds
+			if b.X >= 0 && b.Y >= 0 && b.X <= 10000 && b.Y <= 10000 {
+				nb = append(nb, b)
+			}
+		}
+		bullets = nb
 
-// Respawn all players if anyone was hit
-if hit {
-    for _, p := range players {
-        p.X = rand.Float64() * 600
-        p.Y = rand.Float64() * 400
-    }
-}
+		// Respawn all players if hit
+		if hit {
+			for _, p := range players {
+				p.X = rand.Float64() * 600
+				p.Y = rand.Float64() * 400
+			}
+		}
 
-// Broadcast state
-state := map[string]interface{}{
-    "p": players,
-    "b": bullets,
-}
-
-
+		// Broadcast state
+		state := map[string]interface{}{
+			"p": players,
+			"b": bullets,
+		}
 		for _, c := range conns {
 			c.WriteJSON(state)
 		}
@@ -204,7 +195,7 @@ const ws = new WebSocket("wss://" + location.host + "/ws");
 const c = document.getElementById("c");
 const ctx = c.getContext("2d");
 
-// Make canvas fill the entire window
+// Full window canvas
 function resizeCanvas() {
     c.width = window.innerWidth;
     c.height = window.innerHeight;
@@ -248,7 +239,4 @@ ws.onmessage = e => {
 </script>
 </body>
 </html>
-
-
-
-
+`
