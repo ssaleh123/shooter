@@ -85,7 +85,21 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
 		p := players[id]
 		p.X += msg["dx"] * 5
-		p.Y += msg["dy"] * 5
+p.Y += msg["dy"] * 5
+
+// Clamp to screen
+if p.X < 0 {
+    p.X = 0
+} else if p.X > 800-PLAYER_SIZE {
+    p.X = 800 - PLAYER_SIZE
+}
+
+if p.Y < 0 {
+    p.Y = 0
+} else if p.Y > 600-PLAYER_SIZE {
+    p.Y = 600 - PLAYER_SIZE
+}
+
 
 		if msg["shoot"] == 1 {
 			angle := msg["a"]
@@ -216,3 +230,4 @@ ws.onmessage = e => {
 </body>
 </html>
 `
+
