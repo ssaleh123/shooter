@@ -92,17 +92,21 @@ p.X += msg["dx"] * 5
 p.Y += msg["dy"] * 5
 
 // Clamp to screen
+maxX := 10000 // or get actual client width
+maxY := 10000 // or get actual client height
+
 if p.X < 0 {
     p.X = 0
-} else if p.X > 800 {
-    p.X = 800
+} else if p.X > maxX-PLAYER_SIZE {
+    p.X = maxX - PLAYER_SIZE
 }
-
 if p.Y < 0 {
     p.Y = 0
-} else if p.Y > 600 {
-    p.Y = 600
+} else if p.Y > maxY-PLAYER_SIZE {
+    p.Y = maxY - PLAYER_SIZE
 }
+
+
 
 
 
@@ -199,13 +203,20 @@ const html = `
 const ws = new WebSocket("wss://" + location.host + "/ws");
 const c = document.getElementById("c");
 const ctx = c.getContext("2d");
-c.width = 800; c.height = 600;
+
+// Make canvas fill the entire window
+function resizeCanvas() {
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
 let keys = {}, angle = 0, shoot = 0;
 
 document.onkeydown = e => keys[e.key] = true;
 document.onkeyup = e => keys[e.key] = false;
-document.onmousemove = e => angle = Math.atan2(e.clientY-300,e.clientX-400);
+document.onmousemove = e => angle = Math.atan2(e.clientY - c.height/2, e.clientX - c.width/2);
 document.onclick = () => shoot = 1;
 
 ws.onopen = () => {
@@ -222,18 +233,22 @@ ws.onopen = () => {
 
 ws.onmessage = e => {
   const s = JSON.parse(e.data);
-  ctx.clearRect(0,0,800,600);
+  ctx.clearRect(0, 0, c.width, c.height);
   for (const id in s.p) {
     const p = s.p[id];
-    ctx.fillRect(p.x,p.y,20,20);
+    // Clamp draw position to canvas
+    const drawX = Math.max(0, Math.min(c.width - 20, p.x));
+    const drawY = Math.max(0, Math.min(c.height - 20, p.y));
+    ctx.fillRect(drawX, drawY, 20, 20);
   }
   for (const b of s.b) {
-    ctx.fillRect(b.x,b.y,6,6);
+    ctx.fillRect(b.x, b.y, 6, 6);
   }
 };
 </script>
 </body>
 </html>
-`
+
+
 
 
