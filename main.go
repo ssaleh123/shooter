@@ -103,8 +103,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Clamp to large float64 bounds (full screen)
 // Clamp to screen edges (walls)
-screenWidth := 600.0
-screenHeight := 400.0
+screenWidth := 934.0
+screenHeight := 738.0
 if p.X < 0 {
 	p.X = 0
 } else if p.X > screenWidth-PLAYER_SIZE {
@@ -292,6 +292,7 @@ ws.onmessage = e => {
 </body>
 </html>
 `
+
 
 
 
