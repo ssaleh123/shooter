@@ -1,3 +1,5 @@
+show me the line change to make background black and the line change to make the squares red and then show me where the square size is shown.
+good?
 package main
 
 import (
@@ -271,15 +273,12 @@ ws.onmessage = e => {
 
   myPlayer = s.p[myId];
 
-  ctx.fillStyle = "black";      // <-- set background color
-  ctx.fillRect(0, 0, c.width, c.height);  // <-- fill the whole canvas
-
+  ctx.clearRect(0, 0, c.width, c.height);
 
   // draw players
   for (const id in s.p) {
-    ctx.fillStyle = "red";  // <-- player color
-    ctx.fillRect(p.x, p.y, 40, 40);
-
+    const p = s.p[id];
+    ctx.fillRect(p.x, p.y, 20, 20);
   }
 
   // draw bullets
@@ -293,5 +292,3 @@ ws.onmessage = e => {
 </body>
 </html>
 `
-
-
