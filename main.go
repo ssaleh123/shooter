@@ -1,3 +1,4 @@
+good?
 package main
 
 import (
@@ -23,10 +24,7 @@ type Player struct {
 	X         float64 `json:"x"`
 	Y         float64 `json:"y"`
 	LastShot  int64
-	ScreenW   float64 // new
-	ScreenH   float64 // new
 }
-
 
 
 type Bullet struct {
@@ -65,89 +63,84 @@ func serveHTML(w http.ResponseWriter, r *http.Request) {
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
-    c, err := upgrader.Upgrade(w, r, nil)
-    if err != nil {
-        return
-    }
+	c, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
 
-    id := randString(8)
+	id := randString(8)
 
-    mu.Lock()
-    players[id] = &Player{
-        ID: id,
-        X:  rand.Float64() * 600,
-        Y:  rand.Float64() * 400,
-    }
-    conns[id] = c
-    mu.Unlock()
+	mu.Lock()
+	players[id] = &Player{
+		ID: id,
+		X:  rand.Float64() * 600,
+		Y:  rand.Float64() * 400,
+	}
+	conns[id] = c
+	mu.Unlock()
 
-    // Send player ID to client
-    c.WriteJSON(map[string]string{"id": id})
+	// ✅ SEND PLAYER ID TO CLIENT ON CONNECT
+	c.WriteJSON(map[string]string{
+		"id": id,
+	})
 
-    for {
-        var msg map[string]float64
-        if err := c.ReadJSON(&msg); err != nil {
-            break
-        }
+	for {
+		var msg map[string]float64
+		if err := c.ReadJSON(&msg); err != nil {
+			break
+		}
 
-        mu.Lock()
-        p, ok := players[id]
-        if !ok {
-            mu.Unlock()
-            continue
-        }
+		mu.Lock()
+		p, ok := players[id]
+		if !ok {
+			mu.Unlock()
+			continue
+}
 
-        // Handle init packet
-        if msgType, ok := msg["type"]; ok && msgType == 1 {
-            if w, ok := msg["width"]; ok {
-                p.ScreenW = w
-            }
-            if h, ok := msg["height"]; ok {
-                p.ScreenH = h
-            }
-            mu.Unlock()
-            continue
-        }
 
-        // Move player
-        p.X += msg["dx"] * 5
-        p.Y += msg["dy"] * 5
+		// Move player once
+		p.X += msg["dx"] * 5
+		p.Y += msg["dy"] * 5
 
-        // Clamp to dynamic screen
-        if p.X < 0 {
-            p.X = 0
-        } else if p.X > p.ScreenW-PLAYER_SIZE {
-            p.X = p.ScreenW - PLAYER_SIZE
-        }
-        if p.Y < 0 {
-            p.Y = 0
-        } else if p.Y > p.ScreenH-PLAYER_SIZE {
-            p.Y = p.ScreenH - PLAYER_SIZE
-        }
+		// Clamp to large float64 bounds (full screen)
+		maxX := 10000.0
+		maxY := 10000.0
+		if p.X < 0 {
+			p.X = 0
+		} else if p.X > maxX-PLAYER_SIZE {
+			p.X = maxX - PLAYER_SIZE
+		}
+		if p.Y < 0 {
+			p.Y = 0
+		} else if p.Y > maxY-PLAYER_SIZE {
+			p.Y = maxY - PLAYER_SIZE
+		}
 
-        // Shoot bullet
-        now := time.Now().Unix()
-        if msg["shoot"] == 1 && now-p.LastShot >= 1 {
-            p.LastShot = now
-            angle := msg["a"]
-            bullets = append(bullets, Bullet{
-                X:  p.X,
-                Y:  p.Y,
-                DX: math.Cos(angle) * BULLET_SPEED,
-                DY: math.Sin(angle) * BULLET_SPEED,
-                O:  id,
-            })
-        }
+		// Shoot bullet
+// Shoot bullet (1s cooldown)
 
-        mu.Unlock()
-    }
+now := time.Now().Unix()
+if msg["shoot"] == 1 && now-p.LastShot >= 1 {
+	p.LastShot = now
+	angle := msg["a"]
+	bullets = append(bullets, Bullet{
+		X:  p.X,
+		Y:  p.Y,
+		DX: math.Cos(angle) * BULLET_SPEED,
+		DY: math.Sin(angle) * BULLET_SPEED,
+		O:  id,
+	})
+}
 
-    // ✅ Cleanup after disconnect
-    mu.Lock()
-    delete(players, id)
-    delete(conns, id)
-    mu.Unlock()
-} // <--- closing brace for wsHandler
+
+		mu.Unlock()
+	}
+
+	mu.Lock()
+	delete(players, id)
+	delete(conns, id)
+	mu.Unlock()
+}
 
 
 func gameLoop() {
@@ -255,14 +248,6 @@ document.onmousemove = e => {
 document.onclick = () => shoot = 1;
 
 ws.onopen = () => {
-  // Send initial canvas size to server
-  ws.send(JSON.stringify({
-    type: "init",
-    width: c.width,
-    height: c.height
-  }));
-
-  // Then send movement updates
   setInterval(() => {
     ws.send(JSON.stringify({
       dx: (keys.a ? -1 : 0) + (keys.d ? 1 : 0),
@@ -272,7 +257,7 @@ ws.onopen = () => {
     }));
     shoot = 0;
   }, 16);
-}
+};
 
 ws.onmessage = e => {
   const s = JSON.parse(e.data);
@@ -287,12 +272,15 @@ ws.onmessage = e => {
 
   myPlayer = s.p[myId];
 
-  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillStyle = "black";      // <-- set background color
+  ctx.fillRect(0, 0, c.width, c.height);  // <-- fill the whole canvas
+
 
   // draw players
   for (const id in s.p) {
-    const p = s.p[id];
-    ctx.fillRect(p.x, p.y, 20, 20);
+    ctx.fillStyle = "red";  // <-- player color
+    ctx.fillRect(p.x, p.y, 40, 40);
+
   }
 
   // draw bullets
@@ -306,8 +294,4 @@ ws.onmessage = e => {
 </body>
 </html>
 `
-
-
-
-
 
