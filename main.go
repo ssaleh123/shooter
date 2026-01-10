@@ -19,10 +19,12 @@ const (
 )
 
 type Player struct {
-	ID string  `json:"id"`
-	X  float64 `json:"x"`
-	Y  float64 `json:"y"`
+	ID        string  `json:"id"`
+	X         float64 `json:"x"`
+	Y         float64 `json:"y"`
+	LastShot  int64
 }
+
 
 type Bullet struct {
 	X  float64 `json:"x"`
@@ -76,6 +78,11 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conns[id] = c
 	mu.Unlock()
 
+	// ✅ SEND PLAYER ID TO CLIENT ON CONNECT
+	c.WriteJSON(map[string]string{
+		"id": id,
+	})
+
 	for {
 		var msg map[string]float64
 		if err := c.ReadJSON(&msg); err != nil {
@@ -83,7 +90,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		mu.Lock()
-		p := players[id]
+		p, ok := players[id]
+		if !ok {
+			mu.Unlock()
+			continue
+}
+
 
 		// Move player once
 		p.X += msg["dx"] * 5
@@ -104,16 +116,22 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Shoot bullet
-		if msg["shoot"] == 1 {
-			angle := msg["a"]
-			bullets = append(bullets, Bullet{
-				X:  p.X,
-				Y:  p.Y,
-				DX: math.Cos(angle) * BULLET_SPEED,
-				DY: math.Sin(angle) * BULLET_SPEED,
-				O:  id,
-			})
-		}
+// Shoot bullet (1s cooldown)
+
+now := time.Now().Unix()
+if msg["shoot"] == 1 && now-p.LastShot >= 1 {
+	p.LastShot = now
+	angle := msg["a"]
+	bullets = append(bullets, Bullet{
+		X:  p.X,
+		Y:  p.Y,
+		DX: math.Cos(angle) * BULLET_SPEED,
+		DY: math.Sin(angle) * BULLET_SPEED,
+		O:  id,
+	})
+}
+
+
 		mu.Unlock()
 	}
 
@@ -122,6 +140,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	delete(conns, id)
 	mu.Unlock()
 }
+
 
 func gameLoop() {
 	ticker := time.NewTicker(time.Second / TICK_RATE)
@@ -271,4 +290,5 @@ ws.onmessage = e => {
 </body>
 </html>
 `
+
 
