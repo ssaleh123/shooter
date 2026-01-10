@@ -195,26 +195,43 @@ const ws = new WebSocket("wss://" + location.host + "/ws");
 const c = document.getElementById("c");
 const ctx = c.getContext("2d");
 
-// Full window canvas
 function resizeCanvas() {
-    c.width = window.innerWidth;
-    c.height = window.innerHeight;
+  c.width = window.innerWidth;
+  c.height = window.innerHeight;
 }
 resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener("resize", resizeCanvas);
 
-let keys = {}, angle = 0, shoot = 0;
+let keys = {};
+let angle = 0;
+let shoot = 0;
+
+let myId = null;
+let myPlayer = null;
 
 document.onkeydown = e => keys[e.key] = true;
-document.onkeyup = e => keys[e.key] = false;
-document.onmousemove = e => angle = Math.atan2(e.clientY - c.height/2, e.clientX - c.width/2);
+document.onkeyup   = e => keys[e.key] = false;
+
+// ✅ Angle from PLAYER → MOUSE
+document.onmousemove = e => {
+  if (!myPlayer) return;
+
+  const mx = e.clientX;
+  const my = e.clientY;
+
+  const px = myPlayer.x + 10;
+  const py = myPlayer.y + 10;
+
+  angle = Math.atan2(my - py, mx - px);
+};
+
 document.onclick = () => shoot = 1;
 
 ws.onopen = () => {
   setInterval(() => {
     ws.send(JSON.stringify({
-      dx: (keys.a?-1:0)+(keys.d?1:0),
-      dy: (keys.w?-1:0)+(keys.s?1:0),
+      dx: (keys.a ? -1 : 0) + (keys.d ? 1 : 0),
+      dy: (keys.w ? -1 : 0) + (keys.s ? 1 : 0),
       a: angle,
       shoot: shoot
     }));
@@ -224,19 +241,34 @@ ws.onopen = () => {
 
 ws.onmessage = e => {
   const s = JSON.parse(e.data);
+
+  // ✅ ID packet from server
+  if (s.id) {
+    myId = s.id;
+    return;
+  }
+
+  if (!myId || !s.p[myId]) return;
+
+  myPlayer = s.p[myId];
+
   ctx.clearRect(0, 0, c.width, c.height);
+
+  // draw players
   for (const id in s.p) {
     const p = s.p[id];
-    // Clamp draw position to canvas
-    const drawX = Math.max(0, Math.min(c.width - 20, p.x));
-    const drawY = Math.max(0, Math.min(c.height - 20, p.y));
-    ctx.fillRect(drawX, drawY, 20, 20);
+    ctx.fillRect(p.x, p.y, 20, 20);
   }
+
+  // draw bullets
   for (const b of s.b) {
     ctx.fillRect(b.x, b.y, 6, 6);
   }
 };
 </script>
+
+
 </body>
 </html>
 `
+
