@@ -1,4 +1,3 @@
-good?
 package main
 
 import (
@@ -294,4 +293,5 @@ ws.onmessage = e => {
 </body>
 </html>
 `
+
 
