@@ -102,18 +102,20 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		p.Y += msg["dy"] * 5
 
 		// Clamp to large float64 bounds (full screen)
-		maxX := 10000.0
-		maxY := 10000.0
-		if p.X < 0 {
-			p.X = 0
-		} else if p.X > maxX-PLAYER_SIZE {
-			p.X = maxX - PLAYER_SIZE
-		}
-		if p.Y < 0 {
-			p.Y = 0
-		} else if p.Y > maxY-PLAYER_SIZE {
-			p.Y = maxY - PLAYER_SIZE
-		}
+// Clamp to screen edges (walls)
+screenWidth := 600.0
+screenHeight := 400.0
+if p.X < 0 {
+	p.X = 0
+} else if p.X > screenWidth-PLAYER_SIZE {
+	p.X = screenWidth - PLAYER_SIZE
+}
+if p.Y < 0 {
+	p.Y = 0
+} else if p.Y > screenHeight-PLAYER_SIZE {
+	p.Y = screenHeight - PLAYER_SIZE
+}
+
 
 		// Shoot bullet
 // Shoot bullet (1s cooldown)
@@ -290,5 +292,6 @@ ws.onmessage = e => {
 </body>
 </html>
 `
+
 
 
