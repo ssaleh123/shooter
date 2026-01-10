@@ -1,5 +1,3 @@
-show me the line change to make background black and the line change to make the squares red and then show me where the square size is shown.
-good?
 package main
 
 import (
@@ -292,3 +290,4 @@ ws.onmessage = e => {
 </body>
 </html>
 `
+
