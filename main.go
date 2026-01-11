@@ -132,13 +132,35 @@ func gameLoop() {
 		mu.Lock()
 
 		nb := bullets[:0]
+
 		for _, b := range bullets {
 			b.X += b.DX
 			b.Y += b.DY
-			if b.X >= 0 && b.Y >= 0 && b.X <= 10000 && b.Y <= 10000 {
+
+			hit := false
+
+			for _, p := range players {
+				if p.ID == b.O {
+					continue
+				}
+
+				dx := (p.X + PLAYER_SIZE/2) - b.X
+				dy := (p.Y + PLAYER_SIZE/2) - b.Y
+				if math.Sqrt(dx*dx+dy*dy) < PLAYER_SIZE/2 {
+					// respawn hit player
+					p.X = rand.Float64() * 600
+					p.Y = rand.Float64() * 400
+					hit = true
+					break
+				}
+			}
+
+			// keep bullet if no hit and in bounds
+			if !hit && b.X >= 0 && b.Y >= 0 && b.X <= 10000 && b.Y <= 10000 {
 				nb = append(nb, b)
 			}
 		}
+
 		bullets = nb
 
 		state := map[string]interface{}{
@@ -152,6 +174,7 @@ func gameLoop() {
 		mu.Unlock()
 	}
 }
+
 
 func randString(n int) string {
 	letters := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
@@ -270,3 +293,4 @@ function render(s) {
 </body>
 </html>
 `
+
