@@ -271,18 +271,24 @@ ws.onmessage = e => {
 
   myPlayer = s.p[myId];
 
-  ctx.clearRect(0, 0, c.width, c.height);
+// black background
+ctx.fillStyle = "black";
+ctx.fillRect(0, 0, c.width, c.height);
 
-  // draw players
-  for (const id in s.p) {
-    const p = s.p[id];
-    ctx.fillRect(p.x, p.y, 20, 20);
-  }
+// white players & bullets
+ctx.fillStyle = "white";
 
-  // draw bullets
-  for (const b of s.b) {
-    ctx.fillRect(b.x, b.y, 6, 6);
-  }
+// draw players
+for (const id in s.p) {
+  const p = s.p[id];
+  ctx.fillRect(p.x, p.y, 20, 20);
+}
+
+// draw bullets
+for (const b of s.b) {
+  ctx.fillRect(b.x, b.y, 6, 6);
+}
+
 };
 </script>
 
