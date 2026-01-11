@@ -144,15 +144,16 @@ func gameLoop() {
 					continue
 				}
 
-				dx := (p.X + PLAYER_SIZE/2) - b.X
-				dy := (p.Y + PLAYER_SIZE/2) - b.Y
-				if math.Sqrt(dx*dx+dy*dy) < PLAYER_SIZE/2 {
-					// respawn hit player
-					p.X = rand.Float64() * 600
-					p.Y = rand.Float64() * 400
-					hit = true
-					break
-				}
+				// Check if bullet overlaps the square (anywhere)
+if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
+   b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
+	// respawn hit player
+	p.X = rand.Float64() * 600
+	p.Y = rand.Float64() * 400
+	hit = true
+	break
+}
+
 			}
 
 			// keep bullet if no hit and in bounds
@@ -293,4 +294,5 @@ function render(s) {
 </body>
 </html>
 `
+
 
