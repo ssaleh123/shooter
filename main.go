@@ -202,7 +202,7 @@ const html = `
 ">
 	<div>
 		<input id="name" placeholder="Username"
-			style="font-size:20px;padding:6px" />
+			style="font-size:20px;padding:6px" maxlength="10" />
 		<button onclick="start()"
 			style="font-size:20px;padding:6px">Play</button>
 	</div>
@@ -239,7 +239,9 @@ function start() {
 
 	ws.onmessage = e => render(JSON.parse(e.data));
 }
-
+document.getElementById("name").onkeydown = e => {
+	if (e.key === "Enter") start();
+};
 function sendInput() {
 	ws.send(JSON.stringify({
 		dx: (keys.a?-1:0)+(keys.d?1:0),
@@ -280,7 +282,7 @@ function render(s) {
 
 		// username
 		ctx.fillStyle = "red";
-		ctx.font = "12px sans-serif";
+		ctx.font = "18px sans-serif";
 		ctx.textAlign = "center";
 		ctx.fillText(p.name, p.x + 10, p.y - 5);
 	}
@@ -294,5 +296,6 @@ function render(s) {
 </body>
 </html>
 `
+
 
 
