@@ -19,12 +19,12 @@ const (
 )
 
 type Player struct {
-	ID        string  `json:"id"`
-	X         float64 `json:"x"`
-	Y         float64 `json:"y"`
-	LastShot  int64
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+	LastShot int64
 }
-
 
 type Bullet struct {
 	X  float64 `json:"x"`
@@ -67,18 +67,27 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// first message MUST contain username
+	var join struct {
+		Name string `json:"name"`
+	}
+	if err := c.ReadJSON(&join); err != nil || join.Name == "" {
+		c.Close()
+		return
+	}
+
 	id := randString(8)
 
 	mu.Lock()
 	players[id] = &Player{
-		ID: id,
-		X:  rand.Float64() * 600,
-		Y:  rand.Float64() * 400,
+		ID:   id,
+		Name: join.Name,
+		X:    rand.Float64() * 600,
+		Y:    rand.Float64() * 400,
 	}
 	conns[id] = c
 	mu.Unlock()
 
-	// ✅ SEND PLAYER ID TO CLIENT ON CONNECT
 	c.WriteJSON(map[string]string{
 		"id": id,
 	})
@@ -90,47 +99,23 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		mu.Lock()
-		p, ok := players[id]
-		if !ok {
-			mu.Unlock()
-			continue
-}
+		p := players[id]
 
-
-		// Move player once
 		p.X += msg["dx"] * 5
 		p.Y += msg["dy"] * 5
 
-		// Clamp to large float64 bounds (full screen)
-		maxX := 10000.0
-		maxY := 10000.0
-		if p.X < 0 {
-			p.X = 0
-		} else if p.X > maxX-PLAYER_SIZE {
-			p.X = maxX - PLAYER_SIZE
+		now := time.Now().Unix()
+		if msg["shoot"] == 1 && now-p.LastShot >= 1 {
+			p.LastShot = now
+			a := msg["a"]
+			bullets = append(bullets, Bullet{
+				X:  p.X,
+				Y:  p.Y,
+				DX: math.Cos(a) * BULLET_SPEED,
+				DY: math.Sin(a) * BULLET_SPEED,
+				O:  id,
+			})
 		}
-		if p.Y < 0 {
-			p.Y = 0
-		} else if p.Y > maxY-PLAYER_SIZE {
-			p.Y = maxY - PLAYER_SIZE
-		}
-
-		// Shoot bullet
-// Shoot bullet (1s cooldown)
-
-now := time.Now().Unix()
-if msg["shoot"] == 1 && now-p.LastShot >= 1 {
-	p.LastShot = now
-	angle := msg["a"]
-	bullets = append(bullets, Bullet{
-		X:  p.X,
-		Y:  p.Y,
-		DX: math.Cos(angle) * BULLET_SPEED,
-		DY: math.Sin(angle) * BULLET_SPEED,
-		O:  id,
-	})
-}
-
 
 		mu.Unlock()
 	}
@@ -141,48 +126,21 @@ if msg["shoot"] == 1 && now-p.LastShot >= 1 {
 	mu.Unlock()
 }
 
-
 func gameLoop() {
-	ticker := time.NewTicker(time.Second / TICK_RATE)
-	for range ticker.C {
+	t := time.NewTicker(time.Second / TICK_RATE)
+	for range t.C {
 		mu.Lock()
 
-		// Move bullets
 		nb := bullets[:0]
-		hit := false
 		for _, b := range bullets {
 			b.X += b.DX
 			b.Y += b.DY
-
-			// Check collisions with players (except owner)
-			for _, p := range players {
-				if p.ID != b.O {
-					dx := p.X - b.X
-					dy := p.Y - b.Y
-					dist := math.Sqrt(dx*dx + dy*dy)
-					if dist < (PLAYER_SIZE+BULLET_SIZE)/2 {
-						hit = true
-						break
-					}
-				}
-			}
-
-			// Keep bullets in bounds
 			if b.X >= 0 && b.Y >= 0 && b.X <= 10000 && b.Y <= 10000 {
 				nb = append(nb, b)
 			}
 		}
 		bullets = nb
 
-		// Respawn all players if hit
-		if hit {
-			for _, p := range players {
-				p.X = rand.Float64() * 600
-				p.Y = rand.Float64() * 400
-			}
-		}
-
-		// Broadcast state
 		state := map[string]interface{}{
 			"p": players,
 			"b": bullets,
@@ -207,93 +165,108 @@ func randString(n int) string {
 const html = `
 <!DOCTYPE html>
 <html>
-<body style="margin:0;overflow:hidden">
+<body style="margin:0;overflow:hidden;background:black">
+
+<div id="menu" style="
+	position:absolute;
+	inset:0;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	background:black;
+	z-index:10;
+">
+	<div>
+		<input id="name" placeholder="Username"
+			style="font-size:20px;padding:6px" />
+		<button onclick="start()"
+			style="font-size:20px;padding:6px">Play</button>
+	</div>
+</div>
+
 <canvas id="c"></canvas>
+
 <script>
-const ws = new WebSocket("wss://" + location.host + "/ws");
 const c = document.getElementById("c");
 const ctx = c.getContext("2d");
 
-function resizeCanvas() {
-  c.width = window.innerWidth;
-  c.height = window.innerHeight;
+function resize() {
+	c.width = innerWidth;
+	c.height = innerHeight;
 }
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
+resize();
+onresize = resize;
 
-let keys = {};
-let angle = 0;
-let shoot = 0;
+let ws, myId, myPlayer;
+let keys = {}, angle = 0, shoot = 0;
 
-let myId = null;
-let myPlayer = null;
+function start() {
+	const name = document.getElementById("name").value.trim();
+	if (!name) return;
+
+	document.getElementById("menu").style.display = "none";
+
+	ws = new WebSocket("wss://" + location.host + "/ws");
+
+	ws.onopen = () => {
+		ws.send(JSON.stringify({ name }));
+		setInterval(sendInput, 16);
+	};
+
+	ws.onmessage = e => render(JSON.parse(e.data));
+}
+
+function sendInput() {
+	ws.send(JSON.stringify({
+		dx: (keys.a?-1:0)+(keys.d?1:0),
+		dy: (keys.w?-1:0)+(keys.s?1:0),
+		a: angle,
+		shoot
+	}));
+	shoot = 0;
+}
 
 document.onkeydown = e => keys[e.key] = true;
-document.onkeyup   = e => keys[e.key] = false;
+document.onkeyup = e => keys[e.key] = false;
+onclick = () => shoot = 1;
 
-// ✅ Angle from PLAYER → MOUSE
-document.onmousemove = e => {
-  if (!myPlayer) return;
-
-  const mx = e.clientX;
-  const my = e.clientY;
-
-  const px = myPlayer.x + 10;
-  const py = myPlayer.y + 10;
-
-  angle = Math.atan2(my - py, mx - px);
+onmousemove = e => {
+	if (!myPlayer) return;
+	angle = Math.atan2(
+		e.clientY - (myPlayer.y+10),
+		e.clientX - (myPlayer.x+10)
+	);
 };
 
-document.onclick = () => shoot = 1;
+function render(s) {
+	if (s.id) { myId = s.id; return; }
+	if (!s.p[myId]) return;
 
-ws.onopen = () => {
-  setInterval(() => {
-    ws.send(JSON.stringify({
-      dx: (keys.a ? -1 : 0) + (keys.d ? 1 : 0),
-      dy: (keys.w ? -1 : 0) + (keys.s ? 1 : 0),
-      a: angle,
-      shoot: shoot
-    }));
-    shoot = 0;
-  }, 16);
-};
+	myPlayer = s.p[myId];
 
-ws.onmessage = e => {
-  const s = JSON.parse(e.data);
+	ctx.fillStyle = "black";
+	ctx.fillRect(0,0,c.width,c.height);
 
-  // ✅ ID packet from server
-  if (s.id) {
-    myId = s.id;
-    return;
-  }
+	for (const id in s.p) {
+		const p = s.p[id];
 
-  if (!myId || !s.p[myId]) return;
+		// player
+		ctx.fillStyle = "white";
+		ctx.fillRect(p.x, p.y, 20, 20);
 
-  myPlayer = s.p[myId];
+		// username
+		ctx.fillStyle = "red";
+		ctx.font = "12px sans-serif";
+		ctx.textAlign = "center";
+		ctx.fillText(p.name, p.x + 10, p.y - 5);
+	}
 
-// black background
-ctx.fillStyle = "black";
-ctx.fillRect(0, 0, c.width, c.height);
-
-// white players & bullets
-ctx.fillStyle = "white";
-
-// draw players
-for (const id in s.p) {
-  const p = s.p[id];
-  ctx.fillRect(p.x, p.y, 20, 20);
+	ctx.fillStyle = "white";
+	for (const b of s.b) {
+		ctx.fillRect(b.x, b.y, 6, 6);
+	}
 }
-
-// draw bullets
-for (const b of s.b) {
-  ctx.fillRect(b.x, b.y, 6, 6);
-}
-
-};
 </script>
-
-
 </body>
 </html>
 `
-
