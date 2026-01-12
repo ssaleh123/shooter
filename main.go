@@ -312,7 +312,7 @@ function render(s) {
 	const maxRows = 10;
 	const rowHeight = 25;
 	const colWidth = 50;
-	const startX = 1340 + 20; // right side of map
+	const startX = 1340 + 5; // right side of map
 	const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
 
 	ctx.fillStyle = "white";
@@ -322,7 +322,7 @@ function render(s) {
 	for (let i = 0; i < rows.length && i < maxRows; i++) {
 		const player = rows[i];
 		const y = startY + i * rowHeight;
-		ctx.fillText(player.Name, startX, y);
+		ctx.fillText(player.name, startX, y);
 		ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
 		ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
 	}
@@ -332,6 +332,7 @@ function render(s) {
 </body>
 </html>
 `
+
 
 
 
