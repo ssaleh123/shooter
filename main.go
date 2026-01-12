@@ -355,7 +355,8 @@ function render(s) {
             continue;
         }
         const alpha = 1 - elapsed / 5000; // fade out over 5s
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+ctx.fillStyle = "rgba(255,255,255," + alpha + ")";
+
         const y = 20 + (gameLog.length - 1 - i) * logRowHeight;
         ctx.fillText(entry.text, logX, y);
     }
@@ -367,6 +368,7 @@ function render(s) {
 </body>
 </html>
 `
+
 
 
 
