@@ -279,6 +279,16 @@ onmousemove = e => {
 	);
 };
 
+// outside render, add persistent game log array
+const gameLog = [];
+const maxLogRows = 8; // max visible messages
+const logX = 1340 + 5; // aligned with leaderboard
+const logRowHeight = 20;
+
+function addLog(msg) {
+	gameLog.push({ text: msg, time: Date.now() });
+}
+
 function render(s) {
 	if (s.id) { myId = s.id; return; }
 	if (!s.p[myId]) return;
@@ -311,8 +321,7 @@ function render(s) {
 	const rows = Object.values(s.p);
 	const maxRows = 10;
 	const rowHeight = 25;
-	const colWidth = 50;
-	const startX = 1340 + 5; // right side of map
+	const startX = 1340 + 5;
 	const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
 
 	ctx.fillStyle = "white";
@@ -326,12 +335,29 @@ function render(s) {
 		ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
 		ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
 	}
+
+	// draw top-right fading game log
+	const now = Date.now();
+	for (let i = gameLog.length - 1; i >= 0; i--) {
+		const entry = gameLog[i];
+		const elapsed = now - entry.time;
+		if (elapsed > 5000) {
+			gameLog.splice(i, 1);
+			continue;
+		}
+		const alpha = 1 - elapsed / 5000; // fade out over 5s
+		ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+		const y = 20 + (gameLog.length - 1 - i) * logRowHeight;
+		ctx.fillText(entry.text, logX, y);
+	}
 }
+
 
 </script>
 </body>
 </html>
 `
+
 
 
 
