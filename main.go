@@ -82,8 +82,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	players[id] = &Player{
 		ID:   id,
 		Name: join.Name,
-		X:    rand.Float64() * 600,
-		Y:    rand.Float64() * 400,
+		X:    rand.Float64() * 100,
+		Y:    rand.Float64() * 100,
 	}
 	conns[id] = c
 	mu.Unlock()
@@ -148,8 +148,8 @@ func gameLoop() {
 if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
    b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
 	// respawn hit player
-	p.X = rand.Float64() * 600
-	p.Y = rand.Float64() * 400
+	p.X = rand.Float64() * 100
+	p.Y = rand.Float64() * 100
 	hit = true
 	break
 }
@@ -296,6 +296,7 @@ function render(s) {
 </body>
 </html>
 `
+
 
 
 
