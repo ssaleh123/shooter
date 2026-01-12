@@ -279,29 +279,51 @@ function render(s) {
 	ctx.fillStyle = "black";
 	ctx.fillRect(0,0,c.width,c.height);
 
+	// draw players
 	for (const id in s.p) {
 		const p = s.p[id];
 
-		// player
 		ctx.fillStyle = "white";
 		ctx.fillRect(p.x, p.y, 20, 20);
 
-		// username
 		ctx.fillStyle = "red";
 		ctx.font = "18px sans-serif";
 		ctx.textAlign = "center";
 		ctx.fillText(p.name, p.x + 10, p.y - 5);
 	}
 
+	// draw bullets
 	ctx.fillStyle = "white";
 	for (const b of s.b) {
 		ctx.fillRect(b.x, b.y, 6, 6);
 	}
+
+	// draw scoreboard on bottom right
+	const rows = Object.values(s.p);
+	const maxRows = 10;
+	const rowHeight = 25;
+	const colWidth = 50;
+	const startX = 1340 + 20; // right side of map
+	const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
+
+	ctx.fillStyle = "white";
+	ctx.font = "16px sans-serif";
+	ctx.textAlign = "left";
+
+	for (let i = 0; i < rows.length && i < maxRows; i++) {
+		const player = rows[i];
+		const y = startY + i * rowHeight;
+		ctx.fillText(player.Name, startX, y);
+		ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
+		ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
+	}
 }
+
 </script>
 </body>
 </html>
 `
+
 
 
 
