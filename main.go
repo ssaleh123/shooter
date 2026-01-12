@@ -82,8 +82,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	players[id] = &Player{
 		ID:   id,
 		Name: join.Name,
-		X:    rand.Float64() * 1500,
-		Y:    rand.Float64() * 750,
+		X:    rand.Float64() * 1340,
+		Y:    rand.Float64() * 730,
 	}
 	conns[id] = c
 	mu.Unlock()
@@ -104,7 +104,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		p.X += msg["dx"] * 5
 		p.Y += msg["dy"] * 5
 
-		p.X = math.Max(0, math.Min(p.X, 1400-PLAYER_SIZE))
+		p.X = math.Max(0, math.Min(p.X, 1340-PLAYER_SIZE))
 		p.Y = math.Max(0, math.Min(p.Y, 730-PLAYER_SIZE))
 
 
@@ -152,7 +152,7 @@ func gameLoop() {
 if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
    b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
 	// respawn hit player
-	p.X = rand.Float64() * 1400
+	p.X = rand.Float64() * 1340
 	p.Y = rand.Float64() * 730
 	hit = true
 	break
@@ -162,7 +162,7 @@ if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
 
 			// keep bullet if no hit and in bounds
 			if !hit && b.X >= 0 && b.Y >= 0 &&
-   b.X <= 1400 && b.Y <= 730 {
+   b.X <= 1340 && b.Y <= 730 {
 	nb = append(nb, b)
 }
 
@@ -302,6 +302,7 @@ function render(s) {
 </body>
 </html>
 `
+
 
 
 
