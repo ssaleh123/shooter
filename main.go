@@ -104,6 +104,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		p.X += msg["dx"] * 5
 		p.Y += msg["dy"] * 5
 
+		p.X = math.Max(0, math.Min(p.X, 100-PLAYER_SIZE))
+		p.Y = math.Max(0, math.Min(p.Y, 100-PLAYER_SIZE))
+
+
 		now := time.Now().Unix()
 		if msg["shoot"] == 1 && now-p.LastShot >= 1 {
 			p.LastShot = now
@@ -157,9 +161,11 @@ if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
 			}
 
 			// keep bullet if no hit and in bounds
-			if !hit && b.X >= 0 && b.Y >= 0 && b.X <= 10000 && b.Y <= 10000 {
-				nb = append(nb, b)
-			}
+			if !hit && b.X >= 0 && b.Y >= 0 &&
+   b.X <= 100 && b.Y <= 100 {
+	nb = append(nb, b)
+}
+
 		}
 
 		bullets = nb
@@ -296,6 +302,7 @@ function render(s) {
 </body>
 </html>
 `
+
 
 
 
