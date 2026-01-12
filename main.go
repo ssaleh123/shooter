@@ -337,19 +337,21 @@ function render(s) {
 	}
 
 	// draw top-right fading game log
-	const now = Date.now();
-	for (let i = gameLog.length - 1; i >= 0; i--) {
-		const entry = gameLog[i];
-		const elapsed = now - entry.time;
-		if (elapsed > 5000) {
-			gameLog.splice(i, 1);
-			continue;
-		}
-		const alpha = 1 - elapsed / 5000; // fade out over 5s
-		ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-		const y = 20 + (gameLog.length - 1 - i) * logRowHeight;
-		ctx.fillText(entry.text, logX, y);
-	}
+// draw top-right fading game log
+const now = Date.now();
+for (let i = gameLog.length - 1; i >= 0; i--) {
+    const entry = gameLog[i];
+    const elapsed = now - entry.time;
+    if (elapsed > 5000) {
+        gameLog.splice(i, 1);
+        continue;
+    }
+    const alpha = 1 - elapsed / 5000; // fade out over 5s
+    ctx.fillStyle = "rgba(255,255,255," + alpha + ")";
+    const y = 20 + (gameLog.length - 1 - i) * logRowHeight;
+    ctx.fillText(entry.text, logX, y);
+}
+
 }
 
 
@@ -357,6 +359,7 @@ function render(s) {
 </body>
 </html>
 `
+
 
 
 
