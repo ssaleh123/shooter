@@ -346,20 +346,30 @@ function render(s) {
     }
 
     // draw top-right fading game log
-    const now = Date.now();
-    for (let i = gameLog.length - 1; i >= 0; i--) {
-        const entry = gameLog[i];
-        const elapsed = now - entry.time;
-        if (elapsed > 5000) {
-            gameLog.splice(i, 1);
-            continue;
-        }
-        const alpha = 1 - elapsed / 5000; // fade out over 5s
-ctx.fillStyle = "rgba(255,255,255," + alpha + ")";
-
-        const y = 20 + (gameLog.length - 1 - i) * logRowHeight;
-        ctx.fillText(entry.text, logX, y);
+    // draw top-right fading game log
+const now = Date.now();
+for (let i = gameLog.length - 1; i >= 0; i--) {
+    const entry = gameLog[i];
+    const elapsed = now - entry.time;
+    if (elapsed > 5000) {
+        gameLog.splice(i, 1);
+        continue;
     }
+    const alpha = 1 - elapsed / 5000; // fade out over 5s
+    ctx.fillStyle = "rgba(255,255,255," + alpha + ")";
+    const y = 20 + i * logRowHeight;
+
+    // add 'gamelog:' prefix so we can clearly see it
+    ctx.fillText("gamelog: " + entry.text, logX, y);
+}
+
+// Example of WebSocket error handling when sending log messages
+try {
+    ws.send(JSON.stringify({ test: "test message" }));
+} catch (err) {
+    console.error("WebSocket send error:", err);
+}
+
 }
 
 
@@ -368,6 +378,7 @@ ctx.fillStyle = "rgba(255,255,255," + alpha + ")";
 </body>
 </html>
 `
+
 
 
 
