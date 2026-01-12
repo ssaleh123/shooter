@@ -24,10 +24,9 @@ type Player struct {
 	X        float64 `json:"x"`
 	Y        float64 `json:"y"`
 	LastShot int64
-	Kills    int     `json:"Kills"`
-	Deaths   int     `json:"Deaths"`
+	Kills    int `json:"Kills"`
+	Deaths   int `json:"Deaths"`
 }
-
 
 type Bullet struct {
 	X  float64 `json:"x"`
@@ -106,10 +105,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		p.X += msg["dx"] * 5
 		p.Y += msg["dy"] * 5
-
 		p.X = math.Max(0, math.Min(p.X, 1340-PLAYER_SIZE))
 		p.Y = math.Max(0, math.Min(p.Y, 730-PLAYER_SIZE))
-
 
 		now := time.Now().Unix()
 		if msg["shoot"] == 1 && now-p.LastShot >= 1 {
@@ -139,50 +136,43 @@ func gameLoop() {
 		mu.Lock()
 
 		nb := bullets[:0]
-
 		for _, b := range bullets {
 			b.X += b.DX
 			b.Y += b.DY
-
 			hit := false
 
 			for _, p := range players {
-    if p.ID == b.O {
-        continue
-    }
+				if p.ID == b.O {
+					continue
+				}
+				// Check if bullet overlaps the square
+				if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
+					b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
 
-    // Check if bullet overlaps the square (anywhere)
-    if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
-       b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
+					// respawn hit player
+					p.X = rand.Float64() * 1340
+					p.Y = rand.Float64() * 730
+					p.Deaths += 1
 
-        // respawn hit player
-        p.X = rand.Float64() * 1340
-        p.Y = rand.Float64() * 730
-        p.Deaths += 1
+					if shooter, ok := players[b.O]; ok {
+						shooter.Kills += 1
+						// send hit message to everyone
+						for _, c := range conns {
+							c.WriteJSON(map[string]string{
+								"log": shooter.Name + " killed " + p.Name,
+							})
+						}
+					}
 
-        if shooter, ok := players[b.O]; ok {
-            shooter.Kills += 1
-
-            // send hit message to everyone
-            for _, c := range conns {
-                c.WriteJSON(map[string]string{
-                    "log": shooter.Name + " killed " + p.Name,
-                })
-            }
-        }
-
-        hit = true
-        break
-    }
-}
-
+					hit = true
+					break
+				}
+			}
 
 			// keep bullet if no hit and in bounds
-			if !hit && b.X >= 0 && b.Y >= 0 &&
-   b.X <= 1340 && b.Y <= 730 {
-	nb = append(nb, b)
-}
-
+			if !hit && b.X >= 0 && b.Y >= 0 && b.X <= 1340 && b.Y <= 730 {
+				nb = append(nb, b)
+			}
 		}
 
 		bullets = nb
@@ -198,7 +188,6 @@ func gameLoop() {
 		mu.Unlock()
 	}
 }
-
 
 func randString(n int) string {
 	letters := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
@@ -262,19 +251,8 @@ function start() {
 
 	ws.onmessage = e => render(JSON.parse(e.data));
 }
-document.getElementById("name").onkeydown = e => {
-	if (e.key === "Enter") start();
-};
-function sendInput() {
-	ws.send(JSON.stringify({
-		dx: (keys.a?-1:0)+(keys.d?1:0),
-		dy: (keys.w?-1:0)+(keys.s?1:0),
-		a: angle,
-		shoot
-	}));
-	shoot = 0;
-}
 
+document.getElementById("name").onkeydown = e => { if(e.key==="Enter") start(); };
 document.onkeydown = e => keys[e.key] = true;
 document.onkeyup = e => keys[e.key] = false;
 onclick = () => shoot = 1;
@@ -287,10 +265,9 @@ onmousemove = e => {
 	);
 };
 
-// outside render, add persistent game log array
+// persistent game log
 const gameLog = [];
-const maxLogRows = 8; // max visible messages
-const logX = 1340 + 5; // aligned with leaderboard
+const logX = 1340 + 5;
 const logRowHeight = 20;
 
 function addLog(msg) {
@@ -298,106 +275,72 @@ function addLog(msg) {
 }
 
 function render(s) {
-    if (s.id) { myId = s.id; return; }
-    if (!s.p[myId]) return;
+	if(s.id) { myId = s.id; return; }
+	if(!s.p[myId]) return;
 
-    myPlayer = s.p[myId];
+	myPlayer = s.p[myId];
 
-    // if s contains a log message from server, add it
-    if (s.log) addLog(s.log);
+	// handle log messages
+	if(s.log) addLog(s.log);
 
-    ctx.fillStyle = "black";
-    ctx.fillRect(0,0,c.width,c.height);
+	ctx.fillStyle="black";
+	ctx.fillRect(0,0,c.width,c.height);
 
-    // draw players
-    for (const id in s.p) {
-        const p = s.p[id];
-        ctx.fillStyle = "white";
-        ctx.fillRect(p.x, p.y, 20, 20);
-        ctx.fillStyle = "red";
-        ctx.font = "18px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(p.name, p.x + 10, p.y - 5);
-    }
+	// draw players
+	for(const id in s.p){
+		const p = s.p[id];
+		ctx.fillStyle="white";
+		ctx.fillRect(p.x,p.y,20,20);
+		ctx.fillStyle="red";
+		ctx.font="18px sans-serif";
+		ctx.textAlign="center";
+		ctx.fillText(p.name,p.x+10,p.y-5);
+	}
 
-    // draw bullets
-    ctx.fillStyle = "white";
-    for (const b of s.b) {
-        ctx.fillRect(b.x, b.y, 6, 6);
-    }
+	// draw bullets
+	ctx.fillStyle="white";
+	for(const b of s.b){
+		ctx.fillRect(b.x,b.y,6,6);
+	}
 
-    // draw scoreboard on bottom right
-    const rows = Object.values(s.p);
-    const maxRows = 10;
-    const rowHeight = 25;
-    const startX = 1340 + 5;
-    const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
+	// draw scoreboard
+	const rows = Object.values(s.p);
+	const maxRows = 10;
+	const rowHeight = 25;
+	const startX = 1340+5;
+	const startY = 730-(Math.min(rows.length,maxRows)*rowHeight)-20;
 
-    ctx.fillStyle = "white";
-    ctx.font = "16px sans-serif";
-    ctx.textAlign = "left";
+	ctx.fillStyle="white";
+	ctx.font="16px sans-serif";
+	ctx.textAlign="left";
 
-    for (let i = 0; i < rows.length && i < maxRows; i++) {
-        const player = rows[i];
-        const y = startY + i * rowHeight;
-        ctx.fillText(player.name, startX, y);
-        ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
-        ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
-    }
+	for(let i=0;i<rows.length && i<maxRows;i++){
+		const p = rows[i];
+		const y = startY+i*rowHeight;
+		ctx.fillText(p.name,startX,y);
+		ctx.fillText("K:"+ (p.Kills||0),startX+100,y);
+		ctx.fillText("D:"+ (p.Deaths||0),startX+160,y);
+	}
 
-    // draw top-right fading game log
-    // draw top-right fading game log
-const now = Date.now();
-for (let i = gameLog.length - 1; i >= 0; i--) {
-    const entry = gameLog[i];
-    const elapsed = now - entry.time;
-    if (elapsed > 5000) {
-        gameLog.splice(i, 1);
-        continue;
-    }
-    const alpha = 1 - elapsed / 5000; // fade out over 5s
-    ctx.fillStyle = "rgba(255,255,255," + alpha + ")";
-    const y = 20 + i * logRowHeight;
+	// draw fading game log
+	const now = Date.now();
+	for(let i=gameLog.length-1;i>=0;i--){
+		const entry = gameLog[i];
+		const elapsed = now-entry.time;
+		if(elapsed>5000){ gameLog.splice(i,1); continue; }
+		const alpha = 1-elapsed/5000;
+		ctx.fillStyle = "rgba(255,255,255,"+alpha+")";
+		const y = 20+i*logRowHeight;
+		ctx.fillText("gamelog: "+entry.text, logX, y);
+	}
 
-    // add 'gamelog:' prefix so we can clearly see it
-    ctx.fillText("gamelog: " + entry.text, logX, y);
+	// optional: websocket error check
+	if(ws){
+		try { ws.send(JSON.stringify({test:"test"})); }
+		catch(err){ console.error("ws error:",err); }
+	}
 }
-
-// Example of WebSocket error handling when sending log messages
-try {
-    ws.send(JSON.stringify({ test: "test message" }));
-} catch (err) {
-    console.error("WebSocket send error:", err);
-}
-
-}
-
-
-
 </script>
 </body>
 </html>
 `
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
