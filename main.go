@@ -154,22 +154,17 @@ func gameLoop() {
 				// Check if bullet overlaps the square (anywhere)
 if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
    b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
-	// respawn hit player
+	// respawn hit player and update kills/deaths
 	p.X = rand.Float64() * 1340
 	p.Y = rand.Float64() * 730
+	p.Deaths += 1                // hit player dies
+	if shooter, ok := players[b.O]; ok {
+		shooter.Kills += 1       // shooter gets a kill
+	}
 	hit = true
 	break
-	// respawn hit player and update kills/deaths
-p.X = rand.Float64() * 1340
-p.Y = rand.Float64() * 730
-p.Deaths += 1                // hit player dies
-if shooter, ok := players[b.O]; ok {
-    shooter.Kills += 1       // shooter gets a kill
 }
-hit = true
-break
 
-}
 
 			}
 
@@ -336,4 +331,5 @@ function render(s) {
 </body>
 </html>
 `
+
 
