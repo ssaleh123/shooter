@@ -147,27 +147,35 @@ func gameLoop() {
 			hit := false
 
 			for _, p := range players {
-				if p.ID == b.O {
-					continue
-				}
+    if p.ID == b.O {
+        continue
+    }
 
-				// Check if bullet overlaps the square (anywhere)
-if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
-   b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
-	// respawn hit player
-	// respawn hit player and update kills/deaths
-p.X = rand.Float64() * 1340
-p.Y = rand.Float64() * 730
-p.Deaths += 1                // hit player dies
-if shooter, ok := players[b.O]; ok {
-    shooter.Kills += 1       // shooter gets a kill
+    // Check if bullet overlaps the square (anywhere)
+    if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
+       b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
+
+        // respawn hit player
+        p.X = rand.Float64() * 1340
+        p.Y = rand.Float64() * 730
+        p.Deaths += 1
+
+        if shooter, ok := players[b.O]; ok {
+            shooter.Kills += 1
+
+            // send hit message to everyone
+            for _, c := range conns {
+                c.WriteJSON(map[string]string{
+                    "log": shooter.Name + " killed " + p.Name,
+                })
+            }
+        }
+
+        hit = true
+        break
+    }
 }
-hit = true
-break
 
-}
-
-			}
 
 			// keep bullet if no hit and in bounds
 			if !hit && b.X >= 0 && b.Y >= 0 &&
@@ -290,75 +298,76 @@ function addLog(msg) {
 }
 
 function render(s) {
-	if (s.id) { myId = s.id; return; }
-	if (!s.p[myId]) return;
+    if (s.id) { myId = s.id; return; }
+    if (!s.p[myId]) return;
 
-	myPlayer = s.p[myId];
+    myPlayer = s.p[myId];
 
-	ctx.fillStyle = "black";
-	ctx.fillRect(0,0,c.width,c.height);
+    // if s contains a log message from server, add it
+    if (s.log) addLog(s.log);
 
-	// draw players
-	for (const id in s.p) {
-		const p = s.p[id];
+    ctx.fillStyle = "black";
+    ctx.fillRect(0,0,c.width,c.height);
 
-		ctx.fillStyle = "white";
-		ctx.fillRect(p.x, p.y, 20, 20);
-
-		ctx.fillStyle = "red";
-		ctx.font = "18px sans-serif";
-		ctx.textAlign = "center";
-		ctx.fillText(p.name, p.x + 10, p.y - 5);
-	}
-
-	// draw bullets
-	ctx.fillStyle = "white";
-	for (const b of s.b) {
-		ctx.fillRect(b.x, b.y, 6, 6);
-	}
-
-	// draw scoreboard on bottom right
-	const rows = Object.values(s.p);
-	const maxRows = 10;
-	const rowHeight = 25;
-	const startX = 1340 + 5;
-	const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
-
-	ctx.fillStyle = "white";
-	ctx.font = "16px sans-serif";
-	ctx.textAlign = "left";
-
-	for (let i = 0; i < rows.length && i < maxRows; i++) {
-		const player = rows[i];
-		const y = startY + i * rowHeight;
-		ctx.fillText(player.name, startX, y);
-		ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
-		ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
-	}
-
-	// draw top-right fading game log
-// draw top-right fading game log
-const now = Date.now();
-for (let i = gameLog.length - 1; i >= 0; i--) {
-    const entry = gameLog[i];
-    const elapsed = now - entry.time;
-    if (elapsed > 5000) {
-        gameLog.splice(i, 1);
-        continue;
+    // draw players
+    for (const id in s.p) {
+        const p = s.p[id];
+        ctx.fillStyle = "white";
+        ctx.fillRect(p.x, p.y, 20, 20);
+        ctx.fillStyle = "red";
+        ctx.font = "18px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(p.name, p.x + 10, p.y - 5);
     }
-    const alpha = 1 - elapsed / 5000; // fade out over 5s
-    ctx.fillStyle = "rgba(255,255,255," + alpha + ")";
-    const y = 20 + (gameLog.length - 1 - i) * logRowHeight;
-    ctx.fillText(entry.text, logX, y);
+
+    // draw bullets
+    ctx.fillStyle = "white";
+    for (const b of s.b) {
+        ctx.fillRect(b.x, b.y, 6, 6);
+    }
+
+    // draw scoreboard on bottom right
+    const rows = Object.values(s.p);
+    const maxRows = 10;
+    const rowHeight = 25;
+    const startX = 1340 + 5;
+    const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
+
+    ctx.fillStyle = "white";
+    ctx.font = "16px sans-serif";
+    ctx.textAlign = "left";
+
+    for (let i = 0; i < rows.length && i < maxRows; i++) {
+        const player = rows[i];
+        const y = startY + i * rowHeight;
+        ctx.fillText(player.name, startX, y);
+        ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
+        ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
+    }
+
+    // draw top-right fading game log
+    const now = Date.now();
+    for (let i = gameLog.length - 1; i >= 0; i--) {
+        const entry = gameLog[i];
+        const elapsed = now - entry.time;
+        if (elapsed > 5000) {
+            gameLog.splice(i, 1);
+            continue;
+        }
+        const alpha = 1 - elapsed / 5000; // fade out over 5s
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        const y = 20 + (gameLog.length - 1 - i) * logRowHeight;
+        ctx.fillText(entry.text, logX, y);
+    }
 }
 
-}
 
 
 </script>
 </body>
 </html>
 `
+
 
 
 
