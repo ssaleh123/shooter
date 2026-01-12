@@ -24,7 +24,10 @@ type Player struct {
 	X        float64 `json:"x"`
 	Y        float64 `json:"y"`
 	LastShot int64
+	Kills    int     `json:"Kills"`
+	Deaths   int     `json:"Deaths"`
 }
+
 
 type Bullet struct {
 	X  float64 `json:"x"`
@@ -152,10 +155,16 @@ func gameLoop() {
 if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
    b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
 	// respawn hit player
-	p.X = rand.Float64() * 1340
-	p.Y = rand.Float64() * 730
-	hit = true
-	break
+	// respawn hit player and update kills/deaths
+p.X = rand.Float64() * 1340
+p.Y = rand.Float64() * 730
+p.Deaths += 1                // hit player dies
+if shooter, ok := players[b.O]; ok {
+    shooter.Kills += 1       // shooter gets a kill
+}
+hit = true
+break
+
 }
 
 			}
@@ -323,6 +332,7 @@ function render(s) {
 </body>
 </html>
 `
+
 
 
 
