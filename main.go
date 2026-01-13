@@ -304,7 +304,7 @@ for (const id in s.p) {
 			const killerPlayer = s.p[kId];
 			const prevK = prevStats[kId] || { Kills: 0, Deaths: 0 };
 			if (killerPlayer.Kills > prevK.Kills) {
-				gameLog.unshift(`${killerPlayer.Name || killerPlayer.name} killed ${p.Name || p.name}`);
+				gameLog.unshift(killerPlayer.Name + " killed " + p.Name);
 				gameLog = gameLog.slice(0, 3);
 				break;
 			}
@@ -375,6 +375,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
