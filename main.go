@@ -21,6 +21,7 @@ const (
 type Player struct {
 	ID       string  `json:"id"`
 	Name     string  `json:"name"`
+	Color    string  `json:"color"` 
 	X        float64 `json:"x"`
 	Y        float64 `json:"y"`
 	LastShot int64
@@ -72,8 +73,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// first message MUST contain username
 	var join struct {
-		Name string `json:"name"`
-	}
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
 	if err := c.ReadJSON(&join); err != nil || join.Name == "" {
 		c.Close()
 		return
@@ -83,11 +86,13 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
 	players[id] = &Player{
-		ID:   id,
-		Name: join.Name,
-		X:    rand.Float64() * 1340,
-		Y:    rand.Float64() * 730,
-	}
+	ID:    id,
+	Name:  join.Name,
+	Color: join.Color,
+	X:     rand.Float64() * 1340,
+	Y:     rand.Float64() * 730,
+}
+
 	conns[id] = c
 	mu.Unlock()
 
@@ -215,11 +220,37 @@ const html = `
 	z-index:10;
 ">
 	<div>
-		<input id="name" placeholder="Username"
-			style="font-size:20px;padding:6px" maxlength="10" />
-		<button onclick="start()"
-			style="font-size:20px;padding:6px">Play</button>
+	<input id="name" placeholder="Username"
+		style="font-size:20px;padding:6px" maxlength="10" />
+
+	<div id="colorPicker" style="margin:10px 0; display:grid; grid-template-columns:repeat(4,30px); gap:5px;">
+		<div class="color" data-color="#ff0000" style="width:30px;height:30px;background:#ff0000;cursor:pointer;"></div>
+		<div class="color" data-color="#00ff00" style="width:30px;height:30px;background:#00ff00;cursor:pointer;"></div>
+		<div class="color" data-color="#0000ff" style="width:30px;height:30px;background:#0000ff;cursor:pointer;"></div>
+		<div class="color" data-color="#ffff00" style="width:30px;height:30px;background:#ffff00;cursor:pointer;"></div>
+		<div class="color" data-color="#ff00ff" style="width:30px;height:30px;background:#ff00ff;cursor:pointer;"></div>
+		<div class="color" data-color="#00ffff" style="width:30px;height:30px;background:#00ffff;cursor:pointer;"></div>
+		<div class="color" data-color="#ffa500" style="width:30px;height:30px;background:#ffa500;cursor:pointer;"></div>
+		<div class="color" data-color="#800080" style="width:30px;height:30px;background:#800080;cursor:pointer;"></div>
 	</div>
+
+	<button onclick="start()"
+		style="font-size:20px;padding:6px">Play</button>
+</div>
+
+<script>
+let selectedColor = "#ffffff"; // default
+
+document.querySelectorAll("#colorPicker .color").forEach(el=>{
+	el.onclick = ()=>{
+		selectedColor = el.dataset.color;
+		// highlight selection
+		document.querySelectorAll("#colorPicker .color").forEach(c=>c.style.outline="none");
+		el.style.outline = "3px solid white";
+	}
+});
+</script>
+
 </div>
 
 <canvas id="c"></canvas>
@@ -255,7 +286,7 @@ function start() {
 
 
 	ws.onopen = () => {
-		ws.send(JSON.stringify({ name }));
+		ws.send(JSON.stringify({ name, color: selectedColor }));
 		setInterval(sendInput, 16);
 	};
 
@@ -324,23 +355,25 @@ for (const id in s.p) {
 	ctx.fillRect(0,0,c.width,c.height);
 
 	// draw players
-	for (const id in s.p) {
-		const p = s.p[id];
+for (const id in s.p) {
+	const p = s.p[id];
 
-		ctx.fillStyle = "white";
-		ctx.fillRect(p.x, p.y, 20, 20);
+	ctx.fillStyle = p.color || "white"; // use the chosen color
+	ctx.fillRect(p.x, p.y, 20, 20);
 
-		ctx.fillStyle = "red";
-		ctx.font = "18px sans-serif";
-		ctx.textAlign = "center";
-		ctx.fillText(p.name, p.x + 10, p.y - 5);
-	}
+	ctx.fillStyle = "red";
+	ctx.font = "18px sans-serif";
+	ctx.textAlign = "center";
+	ctx.fillText(p.name, p.x + 10, p.y - 5);
+}
 
-	// draw bullets
-	ctx.fillStyle = "white";
-	for (const b of s.b) {
-		ctx.fillRect(b.x, b.y, 6, 6);
-	}
+// draw bullets
+for (const b of s.b) {
+	const shooter = s.p[b.o];
+	ctx.fillStyle = shooter?.color || "white"; // bullets use shooter's color
+	ctx.fillRect(b.x, b.y, 6, 6);
+}
+
 
 	// draw scoreboard on bottom right
 	// draw game log (above leaderboard)
@@ -378,6 +411,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
