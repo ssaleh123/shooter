@@ -296,21 +296,22 @@ for (const id in s.p) {
 	const p = s.p[id];
 	const prev = prevStats[id] || { Kills: 0, Deaths: 0 };
 
-	// someone died
 	if (p.Deaths > prev.Deaths) {
-		// find the bullet owner who caused the death
-		for (const kId in s.p) {
-			if (kId === id) continue;
-			const killerPlayer = s.p[kId];
-			const prevK = prevStats[kId] || { Kills: 0, Deaths: 0 };
-			// check if killer's Kills increased
-			if (p.Kills && killerPlayer.Kills > prevK.Kills) {
-				gameLog.unshift(killerPlayer.Name + " killed " + p.Name);
-				gameLog = gameLog.slice(0, 3);
-				break;
-			}
+	// The killer is the one whose ID matches the bullet owner
+	for (const kId in s.p) {
+		if (kId === id) continue;
+		const killerPlayer = s.p[kId];
+		const prevK = prevStats[kId] || { Kills: 0, Deaths: 0 };
+
+		// Killer's kills increased by exactly 1 → this is the one who killed p
+		if (killerPlayer.Kills - prevK.Kills === 1) {
+			gameLog.unshift(killerPlayer.Name + " killed " + p.Name);
+			gameLog = gameLog.slice(0, 3);
+			break;
 		}
 	}
+}
+
 
 	prevStats[id] = { Kills: p.Kills, Deaths: p.Deaths };
 }
@@ -377,6 +378,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
