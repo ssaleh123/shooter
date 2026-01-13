@@ -335,7 +335,7 @@ for (const id in s.p) {
 
 if (killer && victim && killer.ID !== victim.ID) {
 	const last = window.gameLog[0];
-	const msg = `${killer.name} killed ${victim.name}`;
+	const msg = killer.name + " killed " + victim.name;
 	if (last !== msg) {
 		window.gameLog.unshift(msg);
 		window.gameLog = window.gameLog.slice(0, 3);
@@ -370,4 +370,5 @@ for (let i = 0; i < rows.length && i < maxRows; i++) {
 </body>
 </html>
 `
+
 
