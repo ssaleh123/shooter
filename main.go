@@ -298,12 +298,13 @@ for (const id in s.p) {
 
 	// someone died
 	if (p.Deaths > prev.Deaths) {
-		// find who got the kill
+		// find the bullet owner who caused the death
 		for (const kId in s.p) {
 			if (kId === id) continue;
 			const killerPlayer = s.p[kId];
 			const prevK = prevStats[kId] || { Kills: 0, Deaths: 0 };
-			if (killerPlayer.Kills > prevK.Kills) {
+			// check if killer's Kills increased
+			if (p.Kills && killerPlayer.Kills > prevK.Kills) {
 				gameLog.unshift(killerPlayer.Name + " killed " + p.Name);
 				gameLog = gameLog.slice(0, 3);
 				break;
@@ -313,6 +314,7 @@ for (const id in s.p) {
 
 	prevStats[id] = { Kills: p.Kills, Deaths: p.Deaths };
 }
+
 
 
 
@@ -375,6 +377,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
