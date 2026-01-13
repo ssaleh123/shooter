@@ -306,7 +306,7 @@ function render(s) {
 		ctx.fillRect(b.x, b.y, 6, 6);
 	}
 
-	// draw scoreboard on bottom right
+		// draw scoreboard on bottom right
 	const rows = Object.values(s.p);
 	const maxRows = 10;
 	const rowHeight = 25;
@@ -314,9 +314,35 @@ function render(s) {
 	const startX = 1340 + 5; // right side of map
 	const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
 
+	// SIMPLE GAME LOG (above leaderboard)
+	if (!window.lastStats) window.lastStats = {};
+	if (!window.gameLog) window.gameLog = [];
+
+	for (const id in s.p) {
+		const p = s.p[id];
+		const prev = window.lastStats[id];
+		if (prev && p.Deaths > prev.Deaths) {
+			const killer = Object.values(s.p).find(x => x.Kills > (window.lastStats[x.ID]?.Kills || 0));
+			if (killer) {
+				window.gameLog.unshift(`${killer.name} killed ${p.name}`);
+				window.gameLog = window.gameLog.slice(0, 3);
+			}
+		}
+		window.lastStats[id] = { Kills: p.Kills, Deaths: p.Deaths };
+	}
+
 	ctx.fillStyle = "white";
-	ctx.font = "16px sans-serif";
+	ctx.font = "14px sans-serif";
 	ctx.textAlign = "left";
+
+	let logY = startY - 15;
+	for (const line of window.gameLog) {
+		ctx.fillText(line, startX, logY);
+		logY -= 18;
+	}
+
+	// LEADERBOARD
+	ctx.font = "16px sans-serif";
 
 	for (let i = 0; i < rows.length && i < maxRows; i++) {
 		const player = rows[i];
@@ -325,11 +351,13 @@ function render(s) {
 		ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
 		ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
 	}
+
 }
 
 </script>
 </body>
 </html>
 `
+
 
 
