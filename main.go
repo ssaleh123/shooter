@@ -237,6 +237,8 @@ onresize = resize;
 
 let ws, myId, myPlayer;
 let gameLog = [];
+let prevStats = {};
+
 
 let keys = {}, angle = 0, shoot = 0;
 
@@ -288,14 +290,31 @@ function render(s) {
 	if (s.id) { myId = s.id; return; }
 	if (!s.p[myId]) return;
 
-	const prevDeaths = myPlayer ? myPlayer.Deaths : 0;
 myPlayer = s.p[myId];
 
-// simple death-based log
-if (myPlayer.Deaths > prevDeaths) {
-	gameLog.unshift(myPlayer.name + " died");
-	gameLog = gameLog.slice(0, 3);
+for (const id in s.p) {
+	const p = s.p[id];
+	const prev = prevStats[id] || { Kills: 0, Deaths: 0 };
+
+	// someone died
+	if (p.Deaths > prev.Deaths) {
+		// find who got the kill
+		for (const kId in s.p) {
+			if (kId === id) continue;
+			const killerPlayer = s.p[kId];
+			const prevK = prevStats[kId] || { Kills: 0, Deaths: 0 };
+			if (killerPlayer.Kills > prevK.Kills) {
+				gameLog.unshift(`${killerPlayer.Name || killerPlayer.name} killed ${p.Name || p.name}`);
+				gameLog = gameLog.slice(0, 3);
+				break;
+			}
+		}
+	}
+
+	prevStats[id] = { Kills: p.Kills, Deaths: p.Deaths };
 }
+
+
 
 
 	ctx.fillStyle = "black";
@@ -356,5 +375,6 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
