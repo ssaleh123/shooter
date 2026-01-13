@@ -236,6 +236,8 @@ resize();
 onresize = resize;
 
 let ws, myId, myPlayer;
+let gameLog = [];
+
 let keys = {}, angle = 0, shoot = 0;
 
 function start() {
@@ -244,7 +246,11 @@ function start() {
 
 	document.getElementById("menu").style.display = "none";
 
-	ws = new WebSocket("wss://" + location.host + "/ws");
+	ws = new WebSocket(
+	(location.protocol === "https:" ? "wss://" : "ws://") +
+	location.host + "/ws"
+);
+
 
 	ws.onopen = () => {
 		ws.send(JSON.stringify({ name }));
@@ -282,7 +288,15 @@ function render(s) {
 	if (s.id) { myId = s.id; return; }
 	if (!s.p[myId]) return;
 
-	myPlayer = s.p[myId];
+	const prevDeaths = myPlayer ? myPlayer.Deaths : 0;
+myPlayer = s.p[myId];
+
+// simple death-based log
+if (myPlayer.Deaths > prevDeaths) {
+	gameLog.unshift(myPlayer.name + " died");
+	gameLog = gameLog.slice(0, 3);
+}
+
 
 	ctx.fillStyle = "black";
 	ctx.fillRect(0,0,c.width,c.height);
@@ -307,7 +321,18 @@ function render(s) {
 	}
 
 	// draw scoreboard on bottom right
-	const rows = Object.values(s.p);
+	// draw game log (above leaderboard)
+ctx.fillStyle = "white";
+ctx.font = "16px sans-serif";
+ctx.textAlign = "left";
+
+for (let i = 0; i < gameLog.length; i++) {
+	ctx.fillText(gameLog[i], 1340 + 5, 730 - 120 + i * 20);
+}
+
+// draw scoreboard on bottom right
+const rows = Object.values(s.p);
+
 	const maxRows = 10;
 	const rowHeight = 25;
 	const colWidth = 50;
@@ -331,4 +356,5 @@ function render(s) {
 </body>
 </html>
 `
+
 
