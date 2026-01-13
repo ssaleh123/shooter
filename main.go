@@ -306,69 +306,29 @@ function render(s) {
 		ctx.fillRect(b.x, b.y, 6, 6);
 	}
 
-// draw scoreboard on bottom right
-const rows = Object.values(s.p);
-const maxRows = 10;
-const rowHeight = 25;
-const colWidth = 50;
-const startX = 1340 + 5; // right side of map
-const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
+	// draw scoreboard on bottom right
+	const rows = Object.values(s.p);
+	const maxRows = 10;
+	const rowHeight = 25;
+	const colWidth = 50;
+	const startX = 1340 + 5; // right side of map
+	const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
 
-/* ===== SIMPLE RELIABLE GAME LOG ===== */
-if (!window.prevStats) window.prevStats = {};
-if (!window.gameLog) window.gameLog = [];
+	ctx.fillStyle = "white";
+	ctx.font = "16px sans-serif";
+	ctx.textAlign = "left";
 
-let killer = null;
-let victim = null;
-
-for (const id in s.p) {
-	const p = s.p[id];
-	const prev = window.prevStats[id];
-
-	if (prev) {
-		if (p.Kills > prev.Kills) killer = p;
-		if (p.Deaths > prev.Deaths) victim = p;
-	}
-
-	window.prevStats[id] = { Kills: p.Kills, Deaths: p.Deaths };
-}
-
-if (killer && victim && killer.ID !== victim.ID) {
-	const last = window.gameLog[0];
-	const msg = killer.name + " killed " + victim.name;
-	if (last !== msg) {
-		window.gameLog.unshift(msg);
-		window.gameLog = window.gameLog.slice(0, 3);
+	for (let i = 0; i < rows.length && i < maxRows; i++) {
+		const player = rows[i];
+		const y = startY + i * rowHeight;
+		ctx.fillText(player.name, startX, y);
+		ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
+		ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
 	}
 }
-
-
-// draw game log ABOVE leaderboard
-ctx.fillStyle = "white";
-ctx.font = "14px sans-serif";
-ctx.textAlign = "left";
-
-let logY = startY - 10;
-for (const line of window.gameLog) {
-	ctx.fillText(line, startX, logY);
-	logY -= 18;
-}
-
-/* ===== LEADERBOARD ===== */
-ctx.font = "16px sans-serif";
-
-for (let i = 0; i < rows.length && i < maxRows; i++) {
-	const player = rows[i];
-	const y = startY + i * rowHeight;
-	ctx.fillText(player.name, startX, y);
-	ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
-	ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
-}
-
 
 </script>
 </body>
 </html>
 `
-
 
