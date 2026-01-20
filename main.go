@@ -400,7 +400,7 @@ const startX = 1340 + 5; // right side of map
 const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
 
 ctx.fillStyle = "white";
-ctx.font = "16px sans-serif";
+ctx.font = "13px sans-serif";
 ctx.textAlign = "left";
 
 for (let i = 0; i < rows.length && i < maxRows; i++) {
@@ -417,6 +417,7 @@ for (let i = 0; i < rows.length && i < maxRows; i++) {
 </body>
 </html>
 `
+
 
 
 
