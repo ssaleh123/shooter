@@ -267,8 +267,8 @@ resize();
 onresize = resize;
 
 let ws, myId, myPlayer;
-let gameLog = [];
 let prevStats = {};
+
 
 
 let keys = {}, angle = 0, shoot = 0;
@@ -325,27 +325,9 @@ myPlayer = s.p[myId];
 
 for (const id in s.p) {
 	const p = s.p[id];
-	const prev = prevStats[id] || { Kills: 0, Deaths: 0 };
-
-	if (p.Deaths > prev.Deaths) {
-	// The killer is the one whose ID matches the bullet owner
-	for (const kId in s.p) {
-		if (kId === id) continue;
-		const killerPlayer = s.p[kId];
-		const prevK = prevStats[kId] || { Kills: 0, Deaths: 0 };
-
-		// Killer's kills increased by exactly 1 → this is the one who killed p
-		if (killerPlayer.Kills - prevK.Kills === 1) {
-			gameLog.unshift(killerPlayer.name + " killed " + p.name);
-			gameLog = gameLog.slice(0, 3);
-			break;
-		}
-	}
-}
-
-
 	prevStats[id] = { Kills: p.Kills, Deaths: p.Deaths };
 }
+
 
 
 
@@ -376,14 +358,8 @@ for (const b of s.b) {
 
 
 	// draw scoreboard on bottom right
-	// draw game log (above leaderboard)
-ctx.fillStyle = "white";
-ctx.font = "16px sans-serif";
-ctx.textAlign = "left";
 
-for (let i = 0; i < gameLog.length; i++) {
-	ctx.fillText(gameLog[i], 1340 + 5, 730 - 120 + i * 20);
-}
+
 
 // draw scoreboard on bottom right
 const rows = Object.values(s.p);
@@ -411,9 +387,6 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
-
-
-
 
 
 
