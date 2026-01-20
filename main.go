@@ -336,7 +336,7 @@ for (const id in s.p) {
 
 		// Killer's kills increased by exactly 1 → this is the one who killed p
 		if (killerPlayer.Kills - prevK.Kills === 1) {
-			gameLog.unshift(killerPlayer.Name + " killed " + p.name);
+			gameLog.unshift(killerPlayer.name + " killed " + p.name);
 			gameLog = gameLog.slice(0, 3);
 			break;
 		}
@@ -411,6 +411,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
