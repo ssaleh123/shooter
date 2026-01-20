@@ -373,17 +373,17 @@ ctx.textAlign = "left";
 
 // draw short instructions above death log
 ctx.fillStyle = "white";
-ctx.font = "14px sans-serif";
-ctx.fillText("WASD = move, click = shoot", 1340 + 5, 730 - 200);
+ctx.font = "13px sans-serif";
+ctx.fillText("WASD = move, click = shoot", 1340 + 5, 730 - 800);
 
 // draw death log
 ctx.fillStyle = "white";
-ctx.font = "16px sans-serif";
+ctx.font = "13px sans-serif";
 for (let i = 0; i < deathLog.length; i++) {
 	ctx.fillText(
 		deathLog[i],
 		1340 + 5,
-		730 - 150 + i * 20
+		730 - 700 + i * 20
 	);
 }
 
@@ -417,6 +417,7 @@ for (let i = 0; i < rows.length && i < maxRows; i++) {
 </body>
 </html>
 `
+
 
 
 
