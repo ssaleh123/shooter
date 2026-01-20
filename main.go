@@ -429,14 +429,17 @@ for (let i = 0; i < sniperText.length; i++) {
 }
 
 // decrease timer
+let sniperCountdownLast = 0; // add at top with other vars
+
+// decrease timer
 if (sniperTimer > 0) {
-	if (!this.sniperCountdownLast) this.sniperCountdownLast = Date.now();
 	const now = Date.now();
-	if (now - this.sniperCountdownLast >= 1000) {
+	if (now - sniperCountdownLast >= 1000) {
 		sniperTimer--;
-		this.sniperCountdownLast = now;
+		sniperCountdownLast = now;
 	}
 }
+
 
 // draw death log below sniper
 for (let i = 0; i < deathLog.length; i++) {
@@ -476,6 +479,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
