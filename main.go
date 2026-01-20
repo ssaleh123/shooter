@@ -12,27 +12,22 @@ import (
 )
 
 const (
-	TICK_RATE          = 60
-	PLAYER_SIZE        = 20
-	BULLET_SIZE        = 6
-	BULLET_SPEED       = 8
-	SNIPER_SPEED       = BULLET_SPEED * 5
-	SNIPER_COOLDOWN    = 10 // seconds
+	TICK_RATE    = 60
+	PLAYER_SIZE  = 20
+	BULLET_SIZE  = 6
+	BULLET_SPEED = 8
 )
 
-
 type Player struct {
-	ID            string  `json:"id"`
-	Name          string  `json:"name"`
-	Color         string  `json:"color"`
-	X             float64 `json:"x"`
-	Y             float64 `json:"y"`
-	LastShot      int64
-	LastSniper    int64
-	Kills         int     `json:"Kills"`
-	Deaths        int     `json:"Deaths"`
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Color    string  `json:"color"` 
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+	LastShot int64
+	Kills    int     `json:"Kills"`
+	Deaths   int     `json:"Deaths"`
 }
-
 
 
 type Bullet struct {
@@ -122,32 +117,17 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 
 		now := time.Now().Unix()
-a := msg["a"]
-
-// normal shot (mouse click)
-if msg["shoot"] == 1 && now-p.LastShot >= 1 {
-	p.LastShot = now
-	bullets = append(bullets, Bullet{
-		X:  p.X,
-		Y:  p.Y,
-		DX: math.Cos(a) * BULLET_SPEED,
-		DY: math.Sin(a) * BULLET_SPEED,
-		O:  id,
-	})
-}
-
-// sniper shot (spacebar)
-if msg["sniper"] == 1 && now-p.LastSniper >= SNIPER_COOLDOWN {
-	p.LastSniper = now
-	bullets = append(bullets, Bullet{
-		X:  p.X,
-		Y:  p.Y,
-		DX: math.Cos(a) * SNIPER_SPEED,
-		DY: math.Sin(a) * SNIPER_SPEED,
-		O:  id,
-	})
-}
-
+		if msg["shoot"] == 1 && now-p.LastShot >= 1 {
+			p.LastShot = now
+			a := msg["a"]
+			bullets = append(bullets, Bullet{
+				X:  p.X,
+				Y:  p.Y,
+				DX: math.Cos(a) * BULLET_SPEED,
+				DY: math.Sin(a) * BULLET_SPEED,
+				O:  id,
+			})
+		}
 
 		mu.Unlock()
 	}
@@ -177,12 +157,8 @@ func gameLoop() {
 				}
 
 				// Check if bullet overlaps the square (anywhere)
-// improved collision using bullet center
-bulletCenterX := b.X + BULLET_SIZE/2
-bulletCenterY := b.Y + BULLET_SIZE/2
-
-if bulletCenterX > p.X && bulletCenterX < p.X+PLAYER_SIZE &&
-   bulletCenterY > p.Y && bulletCenterY < p.Y+PLAYER_SIZE {
+if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
+   b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
 	// respawn hit player and update kills/deaths
 	p.X = rand.Float64() * 1340
 	p.Y = rand.Float64() * 730
@@ -193,7 +169,6 @@ if bulletCenterX > p.X && bulletCenterX < p.X+PLAYER_SIZE &&
 	hit = true
 	break
 }
-
 
 
 			}
@@ -249,15 +224,16 @@ const html = `
 		style="font-size:20px;padding:6px" maxlength="10" />
 
 	<div id="colorPicker" style="margin:10px 0; display:grid; grid-template-columns:repeat(4,30px); gap:5px;">
-		<div class="color" data-color="#ff0000" style="width:30px;height:30px;background:#ff0000;cursor:pointer;"></div>
-		<div class="color" data-color="#00ff00" style="width:30px;height:30px;background:#00ff00;cursor:pointer;"></div>
-		<div class="color" data-color="#0000ff" style="width:30px;height:30px;background:#0000ff;cursor:pointer;"></div>
-		<div class="color" data-color="#ffff00" style="width:30px;height:30px;background:#ffff00;cursor:pointer;"></div>
-		<div class="color" data-color="#ff00ff" style="width:30px;height:30px;background:#ff00ff;cursor:pointer;"></div>
-		<div class="color" data-color="#00ffff" style="width:30px;height:30px;background:#00ffff;cursor:pointer;"></div>
-		<div class="color" data-color="#ffa500" style="width:30px;height:30px;background:#ffa500;cursor:pointer;"></div>
-		<div class="color" data-color="#800080" style="width:30px;height:30px;background:#800080;cursor:pointer;"></div>
-	</div>
+    <div class="color" data-color="#ff0000" style="width:30px;height:30px;background:#ff0000;cursor:pointer;"></div>
+    <div class="color" data-color="#00ff00" style="width:30px;height:30px;background:#00ff00;cursor:pointer;"></div>
+    <div class="color" data-color="#0000ff" style="width:30px;height:30px;background:#0000ff;cursor:pointer;"></div>
+    <div class="color" data-color="#ffff00" style="width:30px;height:30px;background:#ffff00;cursor:pointer;"></div>
+    <div class="color" data-color="#ff00ff" style="width:30px;height:30px;background:#ff00ff;cursor:pointer;"></div>
+    <div class="color" data-color="#00ffff" style="width:30px;height:30px;background:#00ffff;cursor:pointer;"></div>
+    <div class="color" data-color="#ffa500" style="width:30px;height:30px;background:#ffa500;cursor:pointer;"></div>
+    <div class="color" data-color="#808080" style="width:30px;height:30px;background:#808080;cursor:pointer;"></div>
+</div>
+
 
 	<button onclick="start()"
 		style="font-size:20px;padding:6px">Play</button>
@@ -296,8 +272,7 @@ let prevStats = {};
 let deathLog = [];
 
 
-let keys = {}, angle = 0, shoot = 0, sniper = 0;
-
+let keys = {}, angle = 0, shoot = 0;
 
 function start() {
 	const name = document.getElementById("name").value.trim();
@@ -323,26 +298,17 @@ document.getElementById("name").onkeydown = e => {
 };
 function sendInput() {
 	ws.send(JSON.stringify({
-	dx: (keys.a?-1:0)+(keys.d?1:0),
-	dy: (keys.w?-1:0)+(keys.s?1:0),
-	a: angle,
-	shoot,
-	sniper
-}));
-shoot = 0;
-sniper = 0;
-
+		dx: (keys.a?-1:0)+(keys.d?1:0),
+		dy: (keys.w?-1:0)+(keys.s?1:0),
+		a: angle,
+		shoot
+	}));
+	shoot = 0;
 }
 
 document.onkeydown = e => keys[e.key] = true;
 document.onkeyup = e => keys[e.key] = false;
 onclick = () => shoot = 1;
-
-document.onkeydown = e => {
-	keys[e.key] = true;
-	if (e.code === "Space") sniper = 1;
-};
-
 
 onmousemove = e => {
 	if (!myPlayer) return;
@@ -405,10 +371,10 @@ ctx.fillStyle = "white";
 ctx.font = "16px sans-serif";
 ctx.textAlign = "left";
 
-// draw instructions above death log
-ctx.fillStyle = "yellow";
+// draw short instructions above death log
+ctx.fillStyle = "white";
 ctx.font = "14px sans-serif";
-ctx.fillText("Use WASD to move, click to shoot, SPACE for sniper (10s cooldown)", 1340 + 5, 730 - 170);
+ctx.fillText("WASD = move, click = shoot, SPACE = sniper (10s)", 1340 + 5, 730 - 170);
 
 // draw death log
 ctx.fillStyle = "white";
@@ -449,10 +415,6 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
-
-
-
-
 
 
 
