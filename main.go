@@ -374,7 +374,7 @@ ctx.textAlign = "left";
 // draw short instructions above death log
 ctx.fillStyle = "white";
 ctx.font = "14px sans-serif";
-ctx.fillText("WASD = move, click = shoot, SPACE = sniper (10s)", 1340 + 5, 730 - 170);
+ctx.fillText("WASD = move, click = shoot, SPACE = sniper (10s)", 1340 + 5, 730 - 200);
 
 // draw death log
 ctx.fillStyle = "white";
@@ -390,31 +390,34 @@ for (let i = 0; i < deathLog.length; i++) {
 
 
 // draw scoreboard on bottom right
-const rows = Object.values(s.p);
+// draw scoreboard on bottom right (sorted by kills)
+const rows = Object.values(s.p).sort((a, b) => (b.Kills || 0) - (a.Kills || 0));
 
-	const maxRows = 10;
-	const rowHeight = 25;
-	const colWidth = 50;
-	const startX = 1340 + 5; // right side of map
-	const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
+const maxRows = 10;
+const rowHeight = 25;
+const colWidth = 50;
+const startX = 1340 + 5; // right side of map
+const startY = 730 - (Math.min(rows.length, maxRows) * rowHeight) - 20;
 
-	ctx.fillStyle = "white";
-	ctx.font = "16px sans-serif";
-	ctx.textAlign = "left";
+ctx.fillStyle = "white";
+ctx.font = "16px sans-serif";
+ctx.textAlign = "left";
 
-	for (let i = 0; i < rows.length && i < maxRows; i++) {
-		const player = rows[i];
-		const y = startY + i * rowHeight;
-		ctx.fillText(player.name, startX, y);
-		ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
-		ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
-	}
+for (let i = 0; i < rows.length && i < maxRows; i++) {
+	const player = rows[i];
+	const y = startY + i * rowHeight;
+	ctx.fillText(player.name, startX, y);
+	ctx.fillText("K: " + (player.Kills || 0), startX + 100, y);
+	ctx.fillText("D: " + (player.Deaths || 0), startX + 160, y);
+}
+
 }
 
 </script>
 </body>
 </html>
 `
+
 
 
 
