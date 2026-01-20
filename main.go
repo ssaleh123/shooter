@@ -268,7 +268,7 @@ onresize = resize;
 
 let ws, myId, myPlayer;
 let prevStats = {};
-
+let deathLog = [];
 
 
 let keys = {}, angle = 0, shoot = 0;
@@ -325,8 +325,16 @@ myPlayer = s.p[myId];
 
 for (const id in s.p) {
 	const p = s.p[id];
-	prevStats[id] = { Kills: p.Kills, Deaths: p.Deaths };
+	const prev = prevStats[id] || { Deaths: 0 };
+
+	if (p.Deaths > prev.Deaths) {
+		deathLog.unshift(p.name + " died");
+		deathLog = deathLog.slice(0, 3);
+	}
+
+	prevStats[id] = { Deaths: p.Deaths };
 }
+
 
 
 
@@ -358,7 +366,17 @@ for (const b of s.b) {
 
 
 	// draw scoreboard on bottom right
+ctx.fillStyle = "white";
+ctx.font = "16px sans-serif";
+ctx.textAlign = "left";
 
+for (let i = 0; i < deathLog.length; i++) {
+	ctx.fillText(
+		deathLog[i],
+		1340 + 5,
+		730 - 120 + i * 20
+	);
+}
 
 
 // draw scoreboard on bottom right
@@ -387,6 +405,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
