@@ -292,8 +292,10 @@ let deathLog = [];
 
 
 let keys = {}, angle = 0, shoot = 0, sniper = 0;
-let sniperTimer = 0; // 0 means ready, >0 counts down
-let sniperLastShot = 0; // timestamp of last sniper shot
+let sniperTimer = 0;          // 0 means ready, >0 counts down
+let sniperLastShot = 0;       // timestamp of last sniper shot
+let sniperCountdownLast = 0;  // timestamp for countdown, persists between frames
+
 
 
 
@@ -340,14 +342,15 @@ document.onkeydown = e => {
 	keys[e.key] = true;
 	if (e.code === "Space") {
 		sniper = 1;
-		// start cooldown timer if ready
 		const now = Date.now();
 		if (now - sniperLastShot >= SNIPER_COOLDOWN * 1000) {
-			sniperTimer = SNIPER_COOLDOWN;
-			sniperLastShot = now;
+			sniperTimer = SNIPER_COOLDOWN;  // start countdown
+			sniperLastShot = now;            // last shot timestamp
+			sniperCountdownLast = now;       // reset countdown timer reference
 		}
 	}
 };
+
 
 
 
@@ -429,16 +432,15 @@ for (let i = 0; i < sniperText.length; i++) {
 }
 
 // decrease timer
-let sniperCountdownLast = 0; // add at top with other vars
-
 // decrease timer
 if (sniperTimer > 0) {
 	const now = Date.now();
 	if (now - sniperCountdownLast >= 1000) {
-		sniperTimer--;
-		sniperCountdownLast = now;
+		sniperTimer--;               // decrease timer
+		sniperCountdownLast = now;  // update reference for next second
 	}
 }
+
 
 
 // draw death log below sniper
@@ -479,6 +481,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
