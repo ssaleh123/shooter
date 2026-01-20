@@ -292,11 +292,6 @@ let deathLog = [];
 
 
 let keys = {}, angle = 0, shoot = 0, sniper = 0;
-let sniperTimer = 0;          // 0 means ready, >0 counts down
-let sniperLastShot = 0;       // timestamp of last sniper shot
-let sniperCountdownLast = 0;  // timestamp for countdown, persists between frames
-
-
 
 
 function start() {
@@ -340,18 +335,8 @@ onclick = () => shoot = 1;
 
 document.onkeydown = e => {
 	keys[e.key] = true;
-	if (e.code === "Space") {
-		sniper = 1;
-		const now = Date.now();
-		if (now - sniperLastShot >= SNIPER_COOLDOWN * 1000) {
-			sniperTimer = SNIPER_COOLDOWN;  // start countdown
-			sniperLastShot = now;            // last shot timestamp
-			sniperCountdownLast = now;       // reset countdown timer reference
-		}
-	}
+	if (e.code === "Space") sniper = 1;
 };
-
-
 
 
 onmousemove = e => {
@@ -415,37 +400,15 @@ ctx.fillStyle = "white";
 ctx.font = "16px sans-serif";
 ctx.textAlign = "left";
 
-// Rainbow colors
-const rainbow = ["#FF0000","#FF7F00","#FFFF00","#00FF00","#0000FF","#4B0082","#8B00FF"];
+// draw instructions above death log
+ctx.fillStyle = "yellow";
+ctx.font = "14px sans-serif";
+ctx.fillText("Use WASD to move, click to shoot, SPACE for sniper (10s cooldown)", 1340 + 5, 730 - 170);
 
-// draw sniper timer or label
-ctx.font = "20px sans-serif";
-ctx.textAlign = "left";
-
-let sniperText = "SNIPER";
-if (sniperTimer > 0) {
-	sniperText = sniperTimer.toString();
-}
-for (let i = 0; i < sniperText.length; i++) {
-	ctx.fillStyle = rainbow[i % rainbow.length];
-	ctx.fillText(sniperText[i], 1340 + 5 + i*14, 730 - 170);
-}
-
-// decrease timer
-// decrease timer
-if (sniperTimer > 0) {
-	const now = Date.now();
-	if (now - sniperCountdownLast >= 1000) {
-		sniperTimer--;               // decrease timer
-		sniperCountdownLast = now;  // update reference for next second
-	}
-}
-
-
-
-// draw death log below sniper
+// draw death log
+ctx.fillStyle = "white";
+ctx.font = "16px sans-serif";
 for (let i = 0; i < deathLog.length; i++) {
-	ctx.fillStyle = "white";
 	ctx.fillText(
 		deathLog[i],
 		1340 + 5,
@@ -481,8 +444,6 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
-
-
 
 
 
