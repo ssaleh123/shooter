@@ -292,6 +292,9 @@ let deathLog = [];
 
 
 let keys = {}, angle = 0, shoot = 0, sniper = 0;
+let sniperTimer = 0; // 0 means ready, >0 counts down
+let sniperLastShot = 0; // timestamp of last sniper shot
+
 
 
 function start() {
@@ -335,8 +338,17 @@ onclick = () => shoot = 1;
 
 document.onkeydown = e => {
 	keys[e.key] = true;
-	if (e.code === "Space") sniper = 1;
+	if (e.code === "Space") {
+		sniper = 1;
+		// start cooldown timer if ready
+		const now = Date.now();
+		if (now - sniperLastShot >= SNIPER_COOLDOWN * 1000) {
+			sniperTimer = SNIPER_COOLDOWN;
+			sniperLastShot = now;
+		}
+	}
 };
+
 
 
 onmousemove = e => {
@@ -400,13 +412,42 @@ ctx.fillStyle = "white";
 ctx.font = "16px sans-serif";
 ctx.textAlign = "left";
 
+// Rainbow colors
+const rainbow = ["#FF0000","#FF7F00","#FFFF00","#00FF00","#0000FF","#4B0082","#8B00FF"];
+
+// draw sniper timer or label
+ctx.font = "20px sans-serif";
+ctx.textAlign = "left";
+
+let sniperText = "SNIPER";
+if (sniperTimer > 0) {
+	sniperText = sniperTimer.toString();
+}
+for (let i = 0; i < sniperText.length; i++) {
+	ctx.fillStyle = rainbow[i % rainbow.length];
+	ctx.fillText(sniperText[i], 1340 + 5 + i*14, 730 - 170);
+}
+
+// decrease timer
+if (sniperTimer > 0) {
+	if (!this.sniperCountdownLast) this.sniperCountdownLast = Date.now();
+	const now = Date.now();
+	if (now - this.sniperCountdownLast >= 1000) {
+		sniperTimer--;
+		this.sniperCountdownLast = now;
+	}
+}
+
+// draw death log below sniper
 for (let i = 0; i < deathLog.length; i++) {
+	ctx.fillStyle = "white";
 	ctx.fillText(
 		deathLog[i],
 		1340 + 5,
 		730 - 150 + i * 20
 	);
 }
+
 
 
 // draw scoreboard on bottom right
@@ -435,6 +476,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
