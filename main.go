@@ -374,7 +374,7 @@ for (let i = 0; i < deathLog.length; i++) {
 	ctx.fillText(
 		deathLog[i],
 		1340 + 5,
-		730 - 120 + i * 20
+		730 - 150 + i * 20
 	);
 }
 
@@ -405,6 +405,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
