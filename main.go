@@ -329,7 +329,7 @@ for (const id in s.p) {
 
 	if (p.Deaths > prev.Deaths) {
 		deathLog.unshift(p.name + " died");
-		deathLog = deathLog.slice(0, 3);
+		deathLog = deathLog.slice(0, 1);
 	}
 
 	prevStats[id] = { Deaths: p.Deaths };
@@ -405,6 +405,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
