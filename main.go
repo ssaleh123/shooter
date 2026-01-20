@@ -12,22 +12,27 @@ import (
 )
 
 const (
-	TICK_RATE    = 60
-	PLAYER_SIZE  = 20
-	BULLET_SIZE  = 6
-	BULLET_SPEED = 8
+	TICK_RATE          = 60
+	PLAYER_SIZE        = 20
+	BULLET_SIZE        = 6
+	BULLET_SPEED       = 8
+	SNIPER_SPEED       = BULLET_SPEED * 5
+	SNIPER_COOLDOWN    = 10 // seconds
 )
 
+
 type Player struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Color    string  `json:"color"` 
-	X        float64 `json:"x"`
-	Y        float64 `json:"y"`
-	LastShot int64
-	Kills    int     `json:"Kills"`
-	Deaths   int     `json:"Deaths"`
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	Color         string  `json:"color"`
+	X             float64 `json:"x"`
+	Y             float64 `json:"y"`
+	LastShot      int64
+	LastSniper    int64
+	Kills         int     `json:"Kills"`
+	Deaths        int     `json:"Deaths"`
 }
+
 
 
 type Bullet struct {
@@ -117,17 +122,32 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 
 		now := time.Now().Unix()
-		if msg["shoot"] == 1 && now-p.LastShot >= 1 {
-			p.LastShot = now
-			a := msg["a"]
-			bullets = append(bullets, Bullet{
-				X:  p.X,
-				Y:  p.Y,
-				DX: math.Cos(a) * BULLET_SPEED,
-				DY: math.Sin(a) * BULLET_SPEED,
-				O:  id,
-			})
-		}
+a := msg["a"]
+
+// normal shot (mouse click)
+if msg["shoot"] == 1 && now-p.LastShot >= 1 {
+	p.LastShot = now
+	bullets = append(bullets, Bullet{
+		X:  p.X,
+		Y:  p.Y,
+		DX: math.Cos(a) * BULLET_SPEED,
+		DY: math.Sin(a) * BULLET_SPEED,
+		O:  id,
+	})
+}
+
+// sniper shot (spacebar)
+if msg["sniper"] == 1 && now-p.LastSniper >= SNIPER_COOLDOWN {
+	p.LastSniper = now
+	bullets = append(bullets, Bullet{
+		X:  p.X,
+		Y:  p.Y,
+		DX: math.Cos(a) * SNIPER_SPEED,
+		DY: math.Sin(a) * SNIPER_SPEED,
+		O:  id,
+	})
+}
+
 
 		mu.Unlock()
 	}
@@ -271,7 +291,8 @@ let prevStats = {};
 let deathLog = [];
 
 
-let keys = {}, angle = 0, shoot = 0;
+let keys = {}, angle = 0, shoot = 0, sniper = 0;
+
 
 function start() {
 	const name = document.getElementById("name").value.trim();
@@ -297,17 +318,26 @@ document.getElementById("name").onkeydown = e => {
 };
 function sendInput() {
 	ws.send(JSON.stringify({
-		dx: (keys.a?-1:0)+(keys.d?1:0),
-		dy: (keys.w?-1:0)+(keys.s?1:0),
-		a: angle,
-		shoot
-	}));
-	shoot = 0;
+	dx: (keys.a?-1:0)+(keys.d?1:0),
+	dy: (keys.w?-1:0)+(keys.s?1:0),
+	a: angle,
+	shoot,
+	sniper
+}));
+shoot = 0;
+sniper = 0;
+
 }
 
 document.onkeydown = e => keys[e.key] = true;
 document.onkeyup = e => keys[e.key] = false;
 onclick = () => shoot = 1;
+
+document.onkeydown = e => {
+	keys[e.key] = true;
+	if (e.code === "Space") sniper = 1;
+};
+
 
 onmousemove = e => {
 	if (!myPlayer) return;
@@ -405,6 +435,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
