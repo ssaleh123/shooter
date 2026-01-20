@@ -177,8 +177,12 @@ func gameLoop() {
 				}
 
 				// Check if bullet overlaps the square (anywhere)
-if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
-   b.Y+6 > p.Y && b.Y < p.Y+PLAYER_SIZE {
+// improved collision using bullet center
+bulletCenterX := b.X + BULLET_SIZE/2
+bulletCenterY := b.Y + BULLET_SIZE/2
+
+if bulletCenterX > p.X && bulletCenterX < p.X+PLAYER_SIZE &&
+   bulletCenterY > p.Y && bulletCenterY < p.Y+PLAYER_SIZE {
 	// respawn hit player and update kills/deaths
 	p.X = rand.Float64() * 1340
 	p.Y = rand.Float64() * 730
@@ -189,6 +193,7 @@ if b.X+6 > p.X && b.X < p.X+PLAYER_SIZE &&
 	hit = true
 	break
 }
+
 
 
 			}
@@ -444,6 +449,7 @@ const rows = Object.values(s.p);
 </body>
 </html>
 `
+
 
 
 
